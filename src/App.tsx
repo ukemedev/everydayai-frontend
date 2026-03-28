@@ -228,6 +228,22 @@ const CSS = `
   .studio-wrap { max-width: 700px; }
   .deploy-wrap { max-width: 660px; }
   .settings-wrap { max-width: 540px; }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-220px); transition: transform 0.3s ease; z-index: 100; }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .topbar { padding: 0 16px; }
+    .page { padding: 16px; }
+    .stats-row { grid-template-columns: 1fr; }
+    .card-grid { grid-template-columns: 1fr; }
+    .auth-card { max-width: 100%; }
+    .studio-wrap { max-width: 100%; }
+    .deploy-wrap { max-width: 100%; }
+    .settings-wrap { max-width: 100%; }
+    .modal { max-width: calc(100vw - 32px); }
+    .topbar-meta { display: none; }
+  }
 `;
 
 type Page = "dashboard" | "agents" | "studio" | "deploy" | "settings";
