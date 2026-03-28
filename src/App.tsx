@@ -289,6 +289,7 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+        setErr("");
     if (!email || !pass) { setErr("All fields required."); return; }
     if (pass.length < 6) { setErr("Password must be 6+ characters."); return; }
     const url = mode === "login"
@@ -653,6 +654,7 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
 
   async function submitApiKey(e: React.FormEvent) {
     e.preventDefault();
+        setErr("");
     if (!openaiKey.trim()) { setSaveErr("Please enter your OpenAI API key."); return; }
     setSaving(true);
     setSaveErr("");
@@ -739,6 +741,7 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+        setErr("");
     if (!name.trim()) { setErr("Agent name is required."); return; }
     setSubmitting(true);
     setErr("");
