@@ -391,6 +391,21 @@ const CSS = `
 
   .deploy-no-token { background: var(--surface-2); border: var(--border); border-radius: var(--radius); padding: 14px 16px; font-size: 11px; color: var(--text-muted); line-height: 1.7; margin-bottom: 16px; }
   .deploy-no-token strong { color: var(--orange-400); }
+  .deploy-no-agent-banner { background: var(--surface-1); border: var(--border); border-left: 3px solid var(--orange-500); border-radius: var(--radius-md); padding: 20px 22px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .deploy-no-agent-banner-text { flex: 1; min-width: 0; }
+  .deploy-no-agent-banner-title { font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+  .deploy-no-agent-banner-sub { font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+  .deploy-how-it-works { background: var(--surface-1); border: var(--border); border-radius: var(--radius-md); padding: 18px 20px; margin-bottom: 24px; }
+  .deploy-how-steps { display: flex; gap: 0; }
+  .deploy-how-step { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 8px; position: relative; }
+  .deploy-how-step:not(:last-child)::after { content: '→'; position: absolute; right: -8px; top: 14px; font-size: 14px; color: var(--text-muted); }
+  .deploy-how-num { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 8px; background: var(--surface-2); transition: var(--transition); }
+  .deploy-how-step.done .deploy-how-num { border-color: var(--green-term); color: var(--green-term); background: rgba(0,200,100,0.07); }
+  .deploy-how-step.active .deploy-how-num { border-color: var(--orange-500); color: var(--orange-500); background: rgba(255,85,0,0.08); }
+  .deploy-how-label { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.4; }
+  .deploy-how-step.done .deploy-how-label { color: var(--green-term); }
+  .deploy-how-step.active .deploy-how-label { color: var(--orange-400); }
+  @media (max-width: 480px) { .deploy-how-steps { gap: 4px; } .deploy-how-step { padding: 0 4px; } .deploy-how-step:not(:last-child)::after { display: none; } }
 
   @media (max-width: 1024px) {
     .stats-row { grid-template-columns: repeat(2,1fr); }
@@ -1103,6 +1118,38 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
     <div className="page page-enter deploy-page">
       <div className="term-line">deployment</div>
 
+      {/* ── HOW IT WORKS — progress tracker ── */}
+      {!loading && (
+        <div className="deploy-how-it-works">
+          <div style={{ fontSize: 9, color: "var(--orange-400)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--font-mono)" }}>// how it works</div>
+          <div className="deploy-how-steps">
+            {[
+              { num: "1", label: "Create\nan agent", done: agents.length > 0, active: agents.length === 0 },
+              { num: "2", label: "Select &\nPublish", done: !!widgetToken, active: agents.length > 0 && !widgetToken },
+              { num: "3", label: "Copy embed\ncode", done: false, active: !!widgetToken },
+            ].map(s => (
+              <div key={s.num} className={`deploy-how-step${s.done ? " done" : s.active ? " active" : ""}`}>
+                <div className="deploy-how-num">{s.done ? "✓" : s.num}</div>
+                <div className="deploy-how-label" style={{ whiteSpace: "pre" }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── NO AGENTS BANNER ── */}
+      {!loading && agents.length === 0 && (
+        <div className="deploy-no-agent-banner">
+          <div className="deploy-no-agent-banner-text">
+            <div className="deploy-no-agent-banner-title">You need an agent first</div>
+            <div className="deploy-no-agent-banner-sub">Create your first agent, then come back here to publish it and get your embed code.</div>
+          </div>
+          <button className="btn btn-primary" style={{ width: "auto", flexShrink: 0 }} onClick={() => setPage("agents")}>
+            + Create Agent
+          </button>
+        </div>
+      )}
+
       {/* ── AGENT SELECTOR BAR — only when agents exist ── */}
       {loading && <div className="term-line">loading agents...</div>}
       {error && <div className="error-msg">{error}</div>}
@@ -1194,8 +1241,11 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
           {dest === "custom" && (
             <div className="custom-code-panel page-enter">
               {agents.length === 0 ? (
-                <div className="deploy-no-token">
-                  <strong>// no agents yet</strong> — Go to the <span style={{ color: "var(--orange-400)", cursor: "pointer" }} onClick={() => {}}>Agents</span> page to create your first agent, then come back here to publish and get your embed code.
+                <div style={{ textAlign: "center", padding: "32px 16px" }}>
+                  <div style={{ fontSize: 28, marginBottom: 12 }}>{"</>"}</div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--white)", marginBottom: 6 }}>No agent to deploy yet</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.7 }}>You need at least one agent before you can generate an embed code.</div>
+                  <button className="btn btn-primary" style={{ width: "auto", margin: "0 auto" }} onClick={() => setPage("agents")}>+ Create Your First Agent</button>
                 </div>
               ) : !widgetToken ? (
                 <div className="deploy-no-token">
@@ -1491,7 +1541,7 @@ export default function App() {
           {page === "dashboard" && <Dashboard setPage={setPage} refreshKey={refreshKey} />}
           {page === "agents" && <AgentsPage onNew={() => setModal(true)} refreshKey={refreshKey} />}
           {page === "studio" && <StudioPage toast={toast} setPage={setPage} />}
-          {page === "deploy" && <DeployPage toast={toast} refreshKey={refreshKey} />}
+          {page === "deploy" && <DeployPage toast={toast} refreshKey={refreshKey} setPage={setPage} />}
           {page === "settings" && <SettingsPage email={user} toast={toast} />}
         </main>
       </div>
