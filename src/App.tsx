@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 const CSS = `
@@ -302,15 +302,18 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-        setErr("");
+    if (loading) return;
+    setErr("");
     if (!email || !pass) { setErr("All fields required."); return; }
     if (pass.length < 6) { setErr("Password must be 6+ characters."); return; }
     const url = mode === "login"
       ? "https://everydayai-backend-production.up.railway.app/auth/login"
       : "https://everydayai-backend-production.up.railway.app/auth/register";
+    setLoading(true);
     try {
       const res = await axios.post(url, { email, password: pass });
       const token = res.data?.access_token;
@@ -325,6 +328,8 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
           ? "Login failed. Please check your credentials."
           : "Registration failed. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -345,16 +350,18 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
           <form onSubmit={submit}>
             <div className="field">
               <label>email</label>
-              <input className="input" type="email" placeholder="you@example.com" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} />
+              <input className="input" type="email" placeholder="you@example.com" value={email} disabled={loading} onChange={e => { setEmail(e.target.value); setErr(""); }} />
             </div>
             <div className="field">
               <label>password</label>
-              <input className="input" type="password" placeholder="••••••••" value={pass} onChange={e => { setPass(e.target.value); setErr(""); }} />
+              <input className="input" type="password" placeholder="••••••••" value={pass} disabled={loading} onChange={e => { setPass(e.target.value); setErr(""); }} />
             </div>
-            <button className="btn btn-primary" type="submit">{mode === "login" ? "Sign in" : "Create account"}</button>
+            <button className="btn btn-primary" type="submit" disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>
+              {loading ? (mode === "login" ? "// authenticating..." : "// registering...") : (mode === "login" ? "Sign in" : "Create account")}
+            </button>
           </form>
           <div className="auth-switch">
-            {mode === "login" ? <>No account? <a onClick={() => { setMode("signup"); setErr(""); }}>Register</a></> : <>Have an account? <a onClick={() => { setMode("login"); setErr(""); }}>Sign in</a></>}
+            {mode === "login" ? <>No account? <a onClick={() => { if (!loading) { setMode("signup"); setErr(""); } }}>Register</a></> : <>Have an account? <a onClick={() => { if (!loading) { setMode("login"); setErr(""); } }}>Sign in</a></>}
           </div>
         </div>
       </div>
@@ -492,10 +499,14 @@ function StudioPage({ toast }) {
   const [input, setInput] = React.useState("");
   const [typing, setTyping] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [loadingAgents, setLoadingAgents] = React.useState(true);
+  const [loadError, setLoadError] = React.useState("");
   const fileRef = React.useRef(null);
   const endRef = React.useRef(null);
 
   React.useEffect(() => {
+    setLoadingAgents(true);
+    setLoadError("");
     const token = localStorage.getItem("token");
     fetch("https://everydayai-backend-production.up.railway.app/agents/", {
       headers: { Authorization: "Bearer " + token }
@@ -508,10 +519,28 @@ function StudioPage({ toast }) {
         setModel(list[0].model || "gpt-4o-mini");
         setMsgs([{ role: "agent", text: "[" + list[0].name + "] online. How can I assist?" }]);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setLoadError("Failed to load agents. Please refresh and try again.");
+    }).finally(() => {
+      setLoadingAgents(false);
+    });
   }, []);
 
   React.useEffect(() => { endRef.current && endRef.current.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
+
+  if (loadingAgents) return (
+    <div className="page page-enter">
+      <div className="term-line">agent studio</div>
+      <div style={{ color: "var(--gray-600)", fontSize: 12, padding: "40px 0" }}>// loading agents...</div>
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="page page-enter">
+      <div className="term-line">agent studio</div>
+      <div className="error-msg">{loadError}</div>
+    </div>
+  );
 
   const savePrompt = async () => {
     if (!agent) return;
@@ -550,11 +579,14 @@ function StudioPage({ toast }) {
 
   const tabs = ["// prompt", "// knowledge", "// tools", "// chat"];
 
-  if (!agent) return React.createElement("div", { className: "page" },
-    React.createElement("div", { className: "empty" },
-      React.createElement("div", { className: "empty-title" }, "no agents yet"),
-      React.createElement("div", { className: "empty-desc" }, "// create an agent first")
-    )
+  if (!agent) return (
+    <div className="page page-enter">
+      <div className="term-line">agent studio</div>
+      <div className="empty">
+        <div className="empty-title">No agents yet</div>
+        <div className="empty-desc">// create an agent first before using studio</div>
+      </div>
+    </div>
   );
 
   return (
@@ -781,7 +813,7 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
 
   async function submitApiKey(e: React.FormEvent) {
     e.preventDefault();
-        setErr("");
+    setSaveErr("");
     if (!openaiKey.trim()) { setSaveErr("Please enter your OpenAI API key."); return; }
     setSaving(true);
     setSaveErr("");

@@ -38,8 +38,8 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 - Serves on: `http://0.0.0.0:5000`
 - Build: `npm run build` (outputs to `dist/`)
 
-## Known Issues (from original repo)
-1. Studio page blank on load — StudioPage component may be broken
-2. Login shows "Login failed" flash before succeeding
-3. File upload in studio not connected to real backend
-4. Deploy page shows "No agents yet" even with agents
+## Fixes Applied
+1. **Login**: Added `loading` state — button disables, inputs lock, shows "// authenticating..." during request. Prevents double-submit and race conditions. Error only shows after full API response.
+2. **Settings**: Fixed runtime crash — `setErr` was called but only `setSaveErr` exists. Now correctly resets error state before saving.
+3. **Studio**: Added `loadingAgents` state so the page shows "// loading agents..." while the API fetch is in flight instead of instantly showing the "no agents" empty screen. Also added a proper error state for failed fetches.
+4. **General**: Added `import React` default import so `React.useState` / `React.useRef` inside StudioPage resolves correctly.
