@@ -838,7 +838,7 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
                 type="submit"
                 className="btn btn-primary btn-sm"
                 style={{ width: "auto", flexShrink: 0 }}
-                disabled={saving}
+                type="submit" disabled={saving}
               >
                 {saving ? "Saving..." : "Save"}
               </button>
