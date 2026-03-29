@@ -246,6 +246,14 @@ const CSS = `
   .method-put { background: rgba(255,189,0,0.08); color: #ffbd00; border: 1px solid rgba(255,189,0,0.2); }
   .method-delete { background: rgba(255,51,51,0.08); color: var(--red); border: 1px solid rgba(255,51,51,0.2); }
 
+  .studio-no-agent { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--gray-600); margin-bottom: 14px; padding: 10px 12px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; }
+  .studio-no-agent-btn { background: none; border: 1px solid var(--orange-500); color: var(--orange-400); font-size: 10px; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); letter-spacing: 0.05em; transition: all 0.15s; }
+  .studio-no-agent-btn:hover { background: var(--orange-500); color: #fff; }
+  .studio-deploy-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 28px 24px; text-align: center; }
+  .studio-deploy-icon { font-size: 28px; color: var(--orange-400); font-family: var(--font-mono); margin-bottom: 14px; }
+  .studio-deploy-title { font-size: 14px; font-weight: 700; color: var(--gray-100); margin-bottom: 10px; letter-spacing: 0.02em; }
+  .studio-deploy-desc { font-size: 11px; color: var(--gray-600); line-height: 1.8; }
+
   @media (max-width: 900px) {
     .studio-split { flex-direction: column; height: auto; overflow: visible; }
     .studio-left { width: 100%; min-width: unset; border-right: none; border-bottom: var(--border); }
@@ -509,10 +517,10 @@ function AgentsPage({ onNew, refreshKey }: { onNew: () => void; refreshKey: numb
   );
 }
 
-function StudioPage({ toast }) {
+function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (p: Page) => void }) {
   const [tab, setTab] = React.useState(0);
-  const [agent, setAgent] = React.useState(null);
-  const [agents, setAgents] = React.useState([]);
+  const [agent, setAgent] = React.useState<any>(null);
+  const [agents, setAgents] = React.useState<any[]>([]);
   const [prompt, setPrompt] = React.useState("");
   const [model, setModel] = React.useState("gpt-4o-mini");
   const [knowledge, setKnowledge] = React.useState("");
@@ -521,17 +529,15 @@ function StudioPage({ toast }) {
     { id: 2, name: "getContact", method: "GET", endpoint: "/contacts/{id}" },
   ]);
   const [newTool, setNewTool] = React.useState({ name: "", method: "GET", endpoint: "" });
-  const [msgs, setMsgs] = React.useState([{ role: "agent", text: "Studio preview ready. Configure your agent on the left, then test it here." }]);
+  const [msgs, setMsgs] = React.useState([{ role: "agent", text: "Studio ready. Configure your agent on the left, then test it here." }]);
   const [input, setInput] = React.useState("");
   const [typing, setTyping] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [loadingAgents, setLoadingAgents] = React.useState(true);
-  const [loadError, setLoadError] = React.useState("");
-  const endRef = React.useRef(null);
+  const endRef = React.useRef<any>(null);
 
   React.useEffect(() => {
     setLoadingAgents(true);
-    setLoadError("");
     const token = localStorage.getItem("token");
     fetch("https://everydayai-backend-production.up.railway.app/agents/", {
       headers: { Authorization: "Bearer " + token }
@@ -542,10 +548,9 @@ function StudioPage({ toast }) {
         setAgent(list[0]);
         setPrompt(list[0].system_prompt || "");
         setModel(list[0].model || "gpt-4o-mini");
+        setMsgs([{ role: "agent", text: "[" + list[0].name + "] loaded. Configure it on the left, then test it here." }]);
       }
-    }).catch(() => {
-      setLoadError("Failed to load agents. Please refresh and try again.");
-    }).finally(() => setLoadingAgents(false));
+    }).catch(() => {}).finally(() => setLoadingAgents(false));
   }, []);
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
@@ -554,9 +559,9 @@ function StudioPage({ toast }) {
     const a = agents.find((x: any) => String(x.id) === id);
     if (a) {
       setAgent(a);
-      setPrompt((a as any).system_prompt || "");
-      setModel((a as any).model || "gpt-4o-mini");
-      setMsgs([{ role: "agent", text: "[" + (a as any).name + "] loaded. Test it in the chat." }]);
+      setPrompt(a.system_prompt || "");
+      setModel(a.model || "gpt-4o-mini");
+      setMsgs([{ role: "agent", text: "[" + a.name + "] loaded. Test it in the chat." }]);
     }
   };
 
@@ -564,7 +569,7 @@ function StudioPage({ toast }) {
     if (!agent) return;
     setSaving(true);
     const token = localStorage.getItem("token");
-    await fetch("https://everydayai-backend-production.up.railway.app/agents/" + (agent as any).id, {
+    await fetch("https://everydayai-backend-production.up.railway.app/agents/" + agent.id, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
       body: JSON.stringify({ system_prompt: prompt, model })
@@ -578,13 +583,13 @@ function StudioPage({ toast }) {
     if (knowledge.trim()) {
       const lines = knowledge.split("\n").filter(l => l.trim());
       const hit = lines.find(l => words.some(w => w.length > 3 && l.toLowerCase().includes(w)));
-      if (hit) return `Based on my knowledge base: "${hit.trim()}" — is there anything else you'd like to know?`;
-      return `I have ${lines.length} knowledge entries but couldn't find a direct match for that. Could you be more specific?`;
+      if (hit) return `Based on my knowledge base: "${hit.trim()}" — anything else?`;
+      return `I have ${lines.length} knowledge entries but couldn't find a direct match. Could you be more specific?`;
     }
     if (prompt.trim()) {
-      return `[Acting as: "${prompt.slice(0, 80)}${prompt.length > 80 ? "…" : ""}"] — I received your message. This is a simulated preview response.`;
+      return `[Acting as: "${prompt.slice(0, 80)}${prompt.length > 80 ? "…" : ""}"] — Simulated preview response.`;
     }
-    return `I got your message: "${userMsg}". Add a system prompt on the left to define my behavior.`;
+    return `Got your message. Add a system prompt under the Prompt tab to define my behavior.`;
   };
 
   const send = async () => {
@@ -606,30 +611,7 @@ function StudioPage({ toast }) {
 
   const methodCls = (m: string) => ({ GET: "method-get", POST: "method-post", PUT: "method-put", DELETE: "method-delete" }[m] || "method-get");
 
-  if (loadingAgents) return (
-    <div className="page page-enter">
-      <div className="term-line">agent studio</div>
-      <div style={{ color: "var(--gray-600)", fontSize: 12, padding: "40px 0" }}>// loading agents...</div>
-    </div>
-  );
-
-  if (loadError) return (
-    <div className="page page-enter">
-      <div className="term-line">agent studio</div>
-      <div className="error-msg">{loadError}</div>
-    </div>
-  );
-
-  if (!agent) return (
-    <div className="page page-enter">
-      <div className="term-line">agent studio</div>
-      <div className="empty">
-        <div className="empty-ascii">{"[ studio ]"}</div>
-        <div className="empty-title">No agents yet</div>
-        <div className="empty-desc">You need to create an agent before you can use the studio. Go to the Agents page and click "+ New Agent" to get started.</div>
-      </div>
-    </div>
-  );
+  const TABS = ["// prompt", "// knowledge", "// tools", "// deploy"];
 
   return (
     <div className="studio-split">
@@ -637,17 +619,28 @@ function StudioPage({ toast }) {
       {/* ── LEFT: CONFIG PANEL ── */}
       <div className="studio-left">
         <div className="studio-left-header">
-          <div className="term-line" style={{ marginBottom: 12 }}>agent studio</div>
-          <select
-            className="input"
-            style={{ marginBottom: 16, fontSize: 12 }}
-            value={(agent as any).id}
-            onChange={e => selectAgent(e.target.value)}
-          >
-            {agents.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
+
+          {/* Agent selector or no-agent banner */}
+          {loadingAgents ? (
+            <div className="studio-no-agent">// loading agents...</div>
+          ) : agents.length === 0 ? (
+            <div className="studio-no-agent">
+              <span>No agent selected —</span>
+              <button className="studio-no-agent-btn" onClick={() => setPage("agents")}>+ create one</button>
+            </div>
+          ) : (
+            <select
+              className="input"
+              style={{ marginBottom: 14, fontSize: 12 }}
+              value={agent?.id ?? ""}
+              onChange={e => selectAgent(e.target.value)}
+            >
+              {agents.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          )}
+
           <div className="tabs" style={{ marginBottom: 0 }}>
-            {["// prompt", "// knowledge", "// tools"].map((t, i) => (
+            {TABS.map((t, i) => (
               <button key={t} className={"tab" + (tab === i ? " active" : "")} onClick={() => setTab(i)}>{t}</button>
             ))}
           </div>
@@ -666,16 +659,17 @@ function StudioPage({ toast }) {
                   onChange={e => setPrompt(e.target.value)}
                   placeholder="You are a helpful assistant that..."
                   style={{ minHeight: 200, lineHeight: 1.7 }}
+                  disabled={!agent}
                 />
               </div>
               <div className="field">
                 <label>// model</label>
-                <select className="input" value={model} onChange={e => setModel(e.target.value)}>
+                <select className="input" value={model} onChange={e => setModel(e.target.value)} disabled={!agent}>
                   <option value="gpt-4o-mini">gpt-4o-mini</option>
                   <option value="gpt-4o">gpt-4o</option>
                 </select>
               </div>
-              <button className="btn btn-primary" onClick={save} disabled={saving}>
+              <button className="btn btn-primary" onClick={save} disabled={saving || !agent}>
                 {saving ? "// saving..." : "> save config"}
               </button>
             </div>
@@ -685,7 +679,7 @@ function StudioPage({ toast }) {
           {tab === 1 && (
             <div style={{ paddingTop: 20 }} className="page-enter">
               <div style={{ fontSize: 10, color: "var(--gray-600)", marginBottom: 14, lineHeight: 1.8 }}>
-                // paste your knowledge base below. the chat preview uses this as context when responding.
+                // paste your knowledge base below. the chat preview uses this as context.
               </div>
               <div className="field">
                 <label>// knowledge base</label>
@@ -709,17 +703,12 @@ function StudioPage({ toast }) {
           {tab === 2 && (
             <div style={{ paddingTop: 20 }} className="page-enter">
               <div style={{ fontSize: 10, color: "var(--gray-600)", marginBottom: 16, lineHeight: 1.8 }}>
-                // define mock tool endpoints your agent can reference.
+                // mock tool endpoints your agent can reference.
               </div>
               {tools.length > 0 && (
                 <table className="tools-table">
                   <thead>
-                    <tr>
-                      <th>name</th>
-                      <th>method</th>
-                      <th>endpoint</th>
-                      <th></th>
-                    </tr>
+                    <tr><th>name</th><th>method</th><th>endpoint</th><th></th></tr>
                   </thead>
                   <tbody>
                     {tools.map((tool: any) => (
@@ -728,11 +717,8 @@ function StudioPage({ toast }) {
                         <td><span className={"method-badge " + methodCls(tool.method)}>{tool.method}</span></td>
                         <td style={{ color: "var(--gray-600)" }}>{tool.endpoint}</td>
                         <td>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            style={{ padding: "4px 8px", fontSize: 10 }}
-                            onClick={() => setTools((p: any[]) => p.filter((t: any) => t.id !== tool.id))}
-                          >rm</button>
+                          <button className="btn btn-danger btn-sm" style={{ padding: "4px 8px", fontSize: 10 }}
+                            onClick={() => setTools((p: any[]) => p.filter((t: any) => t.id !== tool.id))}>rm</button>
                         </td>
                       </tr>
                     ))}
@@ -762,15 +748,47 @@ function StudioPage({ toast }) {
             </div>
           )}
 
+          {/* DEPLOY TAB */}
+          {tab === 3 && (
+            <div style={{ paddingTop: 20 }} className="page-enter">
+              <div style={{ fontSize: 10, color: "var(--gray-600)", marginBottom: 24, lineHeight: 1.9 }}>
+                // when you're happy with your agent, publish it to get a widget embed code you can drop into any website.
+              </div>
+              <div className="studio-deploy-card">
+                <div className="studio-deploy-icon">{"</>"}</div>
+                <div className="studio-deploy-title">Ready to go live?</div>
+                <div className="studio-deploy-desc">Head to the Deploy page to publish your agent, grab your embed snippet, and drop it into any website in seconds.</div>
+                <button className="btn btn-primary" style={{ marginTop: 20, width: "100%" }} onClick={() => setPage("deploy")}>
+                  Go to Deploy →
+                </button>
+              </div>
+              <div style={{ marginTop: 20, padding: "14px 16px", background: "var(--surface-1)", borderRadius: 6, border: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 9, color: "var(--orange-400)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>// checklist</div>
+                {[
+                  { label: "System prompt configured", done: !!prompt.trim() },
+                  { label: "Knowledge base added", done: !!knowledge.trim() },
+                  { label: "Agent selected", done: !!agent },
+                ].map(item => (
+                  <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, fontSize: 11 }}>
+                    <span style={{ color: item.done ? "var(--green-term)" : "var(--gray-600)", fontSize: 13 }}>{item.done ? "✓" : "○"}</span>
+                    <span style={{ color: item.done ? "var(--gray-200)" : "var(--gray-600)" }}>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
-      {/* ── RIGHT: CHAT PREVIEW ── */}
+      {/* ── RIGHT: CHAT TEST BOX ── */}
       <div className="studio-right">
         <div className="studio-chat-header">
-          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--green-term)", flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: "var(--gray-400)" }}>// preview — {(agent as any).name}</span>
-          <span style={{ marginLeft: "auto", fontSize: 9, color: "var(--gray-600)" }}>{model}</span>
+          <div style={{ width: 7, height: 7, borderRadius: "50%", background: agent ? "var(--green-term)" : "var(--gray-600)", flexShrink: 0 }} />
+          <span style={{ fontSize: 10, color: "var(--gray-400)" }}>
+            {agent ? `// test — ${agent.name}` : "// test — no agent selected"}
+          </span>
+          {agent && <span style={{ marginLeft: "auto", fontSize: 9, color: "var(--gray-600)" }}>{model}</span>}
         </div>
         <div className="studio-chat-log">
           {msgs.map((m, i) => (
@@ -793,12 +811,13 @@ function StudioPage({ toast }) {
           <span className="chat-prompt-sym">{">"}_ </span>
           <input
             className="chat-input"
-            placeholder="type a message to test your agent..."
+            placeholder={agent ? "type a message to test your agent..." : "create an agent to start testing..."}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && send()}
+            disabled={!agent}
           />
-          <button className="chat-send" onClick={send}>↑</button>
+          <button className="chat-send" onClick={send} disabled={!agent}>↑</button>
         </div>
       </div>
 
@@ -1128,7 +1147,7 @@ export default function App() {
           </div>
           {page === "dashboard" && <Dashboard setPage={setPage} refreshKey={refreshKey} />}
           {page === "agents" && <AgentsPage onNew={() => setModal(true)} refreshKey={refreshKey} />}
-          {page === "studio" && <StudioPage toast={toast} />}
+          {page === "studio" && <StudioPage toast={toast} setPage={setPage} />}
           {page === "deploy" && <DeployPage toast={toast} refreshKey={refreshKey} />}
           {page === "settings" && <SettingsPage email={user} toast={toast} />}
         </main>
