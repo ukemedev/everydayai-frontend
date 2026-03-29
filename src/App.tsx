@@ -624,8 +624,9 @@ function StudioPage({ toast }) {
     <div className="page page-enter">
       <div className="term-line">agent studio</div>
       <div className="empty">
+        <div className="empty-ascii">{"[ studio ]"}</div>
         <div className="empty-title">No agents yet</div>
-        <div className="empty-desc">// create an agent first before using studio</div>
+        <div className="empty-desc">You need to create an agent before you can use the studio. Go to the Agents page and click "+ New Agent" to get started.</div>
       </div>
     </div>
   );
