@@ -345,6 +345,53 @@ const CSS = `
   .kb-save-status.saved .kb-dot { animation: pulse 2s ease-in-out infinite; }
 
   /* ── RESPONSIVE ── */
+  /* ── DEPLOY DESTINATIONS ── */
+  .deploy-page { max-width: 720px; }
+  .deploy-agent-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface-1); border: var(--border); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 24px; flex-wrap: wrap; }
+  .deploy-agent-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+  .deploy-agent-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .deploy-agent-name { font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .deploy-agent-id { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+  .deploy-dest-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+  .deploy-dest-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
+  .deploy-dest-tab { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 12px; border-radius: var(--radius-md); border: var(--border); background: var(--surface-1); cursor: pointer; transition: var(--transition); color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; }
+  .deploy-dest-tab:hover { border-color: var(--orange-500); color: var(--text-primary); background: var(--orange-glow); }
+  .deploy-dest-tab.active { border-color: var(--orange-500); background: rgba(255,85,0,0.08); color: var(--orange-400); }
+  .deploy-dest-icon { font-size: 22px; line-height: 1; }
+  .deploy-dest-tab.active .deploy-dest-icon { filter: none; }
+
+  .social-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .social-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 12px; border-radius: var(--radius-md); border: var(--border); background: var(--surface-1); cursor: pointer; transition: var(--transition); font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+  .social-btn:hover { border-color: var(--text-muted); background: var(--surface-2); color: var(--text-primary); }
+  .social-btn.selected { border-color: var(--orange-500); background: rgba(255,85,0,0.07); color: var(--orange-400); }
+  .social-icon { font-size: 24px; line-height: 1; }
+  .social-help { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.7; }
+  .social-help a { color: var(--orange-400); cursor: pointer; text-decoration: none; }
+  .social-help a:hover { color: var(--orange-300); text-decoration: underline; }
+  .social-mock-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-muted); background: var(--surface-2); border: var(--border); padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; font-family: var(--font-mono); }
+
+  .custom-code-panel { }
+  .snippet-label { font-size: 9px; color: var(--orange-400); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+  .snippet-block { background: var(--surface-0); border: var(--border); border-left: 2px solid var(--orange-500); border-radius: var(--radius); padding: 18px 20px; font-family: var(--font-mono); font-size: 12px; color: var(--green-term); line-height: 1.9; position: relative; word-break: break-all; margin-bottom: 14px; overflow-x: auto; }
+  .snippet-copy { position: absolute; top: 10px; right: 10px; background: rgba(255,85,0,0.1); border: 1px solid rgba(255,85,0,0.25); color: var(--orange-400); padding: 4px 10px; border-radius: var(--radius); font-size: 10px; cursor: pointer; font-family: var(--font-mono); transition: var(--transition); }
+  .snippet-copy:hover { background: rgba(255,85,0,0.2); }
+  .snippet-copy.copied { color: var(--green-term); border-color: rgba(0,200,100,0.3); background: rgba(0,200,100,0.07); }
+  .install-steps { margin-top: 20px; }
+  .install-step { display: flex; gap: 14px; padding: 14px 0; border-bottom: var(--border); }
+  .install-step:last-child { border-bottom: none; }
+  .install-step-num { font-size: 10px; color: var(--orange-500); width: 22px; flex-shrink: 0; font-weight: 700; padding-top: 1px; font-family: var(--font-mono); }
+  .install-step-body { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
+  .install-step-body strong { color: var(--text-primary); display: block; margin-bottom: 2px; font-family: var(--font-sans); font-size: 13px; }
+  .website-mock { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; text-align: center; border: 1px dashed var(--surface-3); border-radius: var(--radius-md); }
+  .website-mock-icon { font-size: 36px; margin-bottom: 16px; }
+  .website-mock-title { font-family: var(--font-sans); font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+  .website-mock-desc { font-size: 12px; color: var(--text-muted); line-height: 1.7; max-width: 320px; }
+  .coming-soon-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; background: rgba(255,189,0,0.08); color: #c49000; border: 1px solid rgba(255,189,0,0.2); padding: 3px 10px; border-radius: 2px; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 14px; font-family: var(--font-mono); }
+
+  .deploy-no-token { background: var(--surface-2); border: var(--border); border-radius: var(--radius); padding: 14px 16px; font-size: 11px; color: var(--text-muted); line-height: 1.7; margin-bottom: 16px; }
+  .deploy-no-token strong { color: var(--orange-400); }
+
   @media (max-width: 1024px) {
     .stats-row { grid-template-columns: repeat(2,1fr); }
     .studio-left { width: 320px; }
@@ -992,43 +1039,73 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
   );
 }
 
+type DeployDest = "socials" | "custom" | "website";
+type SocialPlatform = "whatsapp" | "instagram" | "messenger";
+
 function DeployPage({ toast, refreshKey }: { toast: (m: string) => void; refreshKey: number }) {
   const { agents, loading, error } = useAgents(refreshKey);
-  const [publishing, setPublishing] = useState<Record<string, boolean>>({});
-  const [widgetTokens, setWidgetTokens] = useState<Record<string, string>>({});
-  const [publishErrors, setPublishErrors] = useState<Record<string, string>>({});
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [widgetToken, setWidgetToken] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [dest, setDest] = useState<DeployDest>("custom");
+  const [social, setSocial] = useState<SocialPlatform>("whatsapp");
+  const [copied, setCopied] = useState<string | null>(null);
 
-  async function publish(agentId: string) {
-    setPublishing(p => ({ ...p, [agentId]: true }));
-    setPublishErrors(e => { const next = { ...e }; delete next[agentId]; return next; });
+  useEffect(() => {
+    if (agents.length > 0 && !selectedAgent) setSelectedAgent(agents[0]);
+  }, [agents]);
+
+  async function publish() {
+    if (!selectedAgent) return;
+    setPublishing(true);
+    setPublishError(null);
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        `https://everydayai-backend-production.up.railway.app/agents/${agentId}/publish`,
+        `https://everydayai-backend-production.up.railway.app/agents/${selectedAgent.id}/publish`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const widgetToken = res.data?.widget_token ?? res.data?.token ?? res.data?.access_token ?? JSON.stringify(res.data);
-      setWidgetTokens(t => ({ ...t, [agentId]: widgetToken }));
+      const wt = res.data?.widget_token ?? res.data?.token ?? res.data?.access_token ?? JSON.stringify(res.data);
+      setWidgetToken(wt);
       toast("Agent published!");
     } catch (e: unknown) {
-      const _d = axios.isAxiosError(e) ? e.response?.data : null;
-      const msg = _d?.detail || _d?.message || (typeof _d === "string" ? _d : null) || "Publish failed. Please try again.";
-      setPublishErrors(err => ({ ...err, [agentId]: msg }));
+      const d = axios.isAxiosError(e) ? e.response?.data : null;
+      const msg = d?.detail || d?.message || (typeof d === "string" ? d : null) || "Publish failed. Please try again.";
+      setPublishError(msg);
       toast("Publish failed.");
     } finally {
-      setPublishing(p => ({ ...p, [agentId]: false }));
+      setPublishing(false);
     }
   }
 
-  return (
-    <div className="page page-enter deploy-wrap">
-      <div className="term-line">deployment</div>
-      <div className="section-title" style={{ marginBottom: 20 }}>Deploy Agents</div>
+  function copyText(text: string, key: string) {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    toast("Copied to clipboard!");
+    setTimeout(() => setCopied(null), 2000);
+  }
 
+  const widgetSnippet = widgetToken
+    ? `<!-- EverydayAI Widget -->\n<script>\n  window.EverydayAIConfig = {\n    token: "${widgetToken}",\n    position: "bottom-right",\n    theme: "dark"\n  };\n</script>\n<script src="https://cdn.everydayai.app/widget.js" async></script>`
+    : null;
+
+  const SOCIALS: { id: SocialPlatform; label: string; icon: string; color: string; helpText: string; btnLabel: string }[] = [
+    { id: "whatsapp",  label: "WhatsApp",  icon: "💬", color: "#25d366", helpText: "Connect your WhatsApp Business number to deploy your agent directly in WhatsApp conversations.", btnLabel: "Connect WhatsApp" },
+    { id: "instagram", label: "Instagram", icon: "📷", color: "#e1306c", helpText: "Deploy your agent to handle Instagram DMs and comments automatically.", btnLabel: "Connect Instagram" },
+    { id: "messenger", label: "Messenger", icon: "💭", color: "#0084ff", helpText: "Integrate your agent into Facebook Messenger to chat with your page visitors.", btnLabel: "Connect Messenger" },
+  ];
+
+  const activeSocial = SOCIALS.find(s => s.id === social)!;
+
+  return (
+    <div className="page page-enter deploy-page">
+      <div className="term-line">deployment</div>
+
+      {/* ── AGENT SELECTOR BAR ── */}
       {loading && <div className="term-line">loading agents...</div>}
       {error && <div className="error-msg">{error}</div>}
-
       {!loading && !error && agents.length === 0 && (
         <div className="empty">
           <div className="empty-title">No agents yet</div>
@@ -1036,63 +1113,143 @@ function DeployPage({ toast, refreshKey }: { toast: (m: string) => void; refresh
         </div>
       )}
 
-      {agents.map(agent => (
-        <div key={agent.id} className="card card-hl" style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
-            <div>
-              <div className="agent-name" style={{ marginBottom: 2 }}>{agent.name}</div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <span className="agent-id">{agent.id}</span>
-                <span className={`status-badge ${agent.status === "live" ? "status-live" : "status-draft"}`}>
-                  <span className="status-dot" />{agent.status}
-                </span>
+      {!loading && agents.length > 0 && (
+        <>
+          <div className="deploy-agent-bar">
+            <div className="deploy-agent-info">
+              <div
+                className="deploy-agent-dot"
+                style={{ background: selectedAgent?.status === "live" ? "var(--green-term)" : "var(--text-muted)" }}
+              />
+              <div style={{ minWidth: 0 }}>
+                <select
+                  className="input"
+                  style={{ background: "none", border: "none", padding: "0", fontSize: 14, fontFamily: "var(--font-sans)", fontWeight: 600, color: "var(--white)", cursor: "pointer", outline: "none" }}
+                  value={selectedAgent?.id ?? ""}
+                  onChange={e => {
+                    const a = agents.find(x => String(x.id) === e.target.value) ?? null;
+                    setSelectedAgent(a);
+                    setWidgetToken(null);
+                    setPublishError(null);
+                  }}
+                >
+                  {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+                <div className="deploy-agent-id">{selectedAgent?.id}</div>
               </div>
             </div>
-            <button
-              className="btn btn-term btn-sm"
-              onClick={() => publish(agent.id)}
-              disabled={!!publishing[agent.id]}
-            >
-              {publishing[agent.id] ? "Publishing..." : "Publish"}
+            <button className="btn btn-term btn-sm" onClick={publish} disabled={publishing || !selectedAgent}>
+              {publishing ? "Publishing..." : selectedAgent?.status === "live" ? "Re-publish" : "Publish Agent"}
             </button>
           </div>
 
-          {publishErrors[agent.id] && (
-            <div className="error-msg" style={{ marginBottom: 0 }}>{publishErrors[agent.id]}</div>
-          )}
+          {publishError && <div className="error-msg">{publishError}</div>}
 
-          {widgetTokens[agent.id] && (
-            <div>
-              <div style={{ fontSize: 10, color: "var(--orange-400)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>Widget Token</div>
-              <div className="token-box">
-                <span className="token-prefix">Bearer </span>{widgetTokens[agent.id]}
+          {/* ── DESTINATION SELECTOR ── */}
+          <div className="deploy-dest-label">Select a Deployment Destination</div>
+          <div className="deploy-dest-tabs">
+            {([
+              { id: "socials" as DeployDest, icon: "📱", label: "Socials" },
+              { id: "custom"  as DeployDest, icon: "</>", label: "Custom Code" },
+              { id: "website" as DeployDest, icon: "🌐", label: "Website" },
+            ] as const).map(d => (
+              <div
+                key={d.id}
+                className={`deploy-dest-tab${dest === d.id ? " active" : ""}`}
+                onClick={() => setDest(d.id)}
+              >
+                <span className="deploy-dest-icon">{d.icon}</span>
+                {d.label}
+              </div>
+            ))}
+          </div>
+
+          {/* ── SOCIALS PANEL ── */}
+          {dest === "socials" && (
+            <div className="page-enter">
+              <div className="social-mock-badge">// mock — coming soon</div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 16, letterSpacing: "0.06em", textTransform: "uppercase" }}>Select Social Deployment</div>
+              <div className="social-grid">
+                {SOCIALS.map(s => (
+                  <div
+                    key={s.id}
+                    className={`social-btn${social === s.id ? " selected" : ""}`}
+                    onClick={() => setSocial(s.id)}
+                  >
+                    <span className="social-icon">{s.icon}</span>
+                    {s.label}
+                  </div>
+                ))}
+              </div>
+              <div className="social-help">
+                // Need help? <a onClick={() => toast("Tutorial coming soon!")}>Watch our {activeSocial.label} Deployment tutorial</a>
               </div>
               <button
-                className="copy-btn"
-                style={{ position: "static", marginTop: 8 }}
-                onClick={() => { navigator.clipboard.writeText(widgetTokens[agent.id]); toast("Token copied!"); }}
+                className="btn btn-primary"
+                style={{ width: "auto", paddingLeft: 24, paddingRight: 24 }}
+                onClick={() => toast(`${activeSocial.label} integration coming soon!`)}
               >
-                copy token
+                {activeSocial.btnLabel}
               </button>
             </div>
           )}
-        </div>
-      ))}
 
-      {!loading && agents.length > 0 && (
-        <div className="card" style={{ marginTop: 8 }}>
-          <div className="term-line">embed instructions</div>
-          {[
-            { num: "01", title: "Publish your agent", body: "Click Publish above to generate your widget token." },
-            { num: "02", title: "Copy the embed snippet", body: "Use the token to configure the EverydayAI widget script." },
-            { num: "03", title: "Paste into your website", body: "Drop the snippet before the closing </body> tag on any page." },
-          ].map(s => (
-            <div key={s.num} className="step-row">
-              <div className="step-num">{s.num}</div>
-              <div className="step-text"><strong>{s.title}</strong>{s.body}</div>
+          {/* ── CUSTOM CODE PANEL ── */}
+          {dest === "custom" && (
+            <div className="custom-code-panel page-enter">
+              {!widgetToken ? (
+                <div className="deploy-no-token">
+                  <strong>// publish first</strong> — Click "Publish Agent" above to generate your widget token, then your embed snippet will appear here ready to copy.
+                </div>
+              ) : (
+                <>
+                  <div className="snippet-label">// 1. widget token</div>
+                  <div className="snippet-block">
+                    <button className={`snippet-copy${copied === "token" ? " copied" : ""}`} onClick={() => copyText(widgetToken, "token")}>
+                      {copied === "token" ? "✓ copied" : "copy"}
+                    </button>
+                    <span style={{ color: "var(--text-muted)" }}>Bearer </span>{widgetToken}
+                  </div>
+
+                  <div className="snippet-label">// 2. embed snippet — paste before &lt;/body&gt;</div>
+                  <div className="snippet-block" style={{ whiteSpace: "pre" }}>
+                    <button className={`snippet-copy${copied === "snippet" ? " copied" : ""}`} onClick={() => copyText(widgetSnippet!, "snippet")}>
+                      {copied === "snippet" ? "✓ copied" : "copy"}
+                    </button>
+                    {widgetSnippet}
+                  </div>
+                </>
+              )}
+
+              <div className="install-steps">
+                <div style={{ fontSize: 9, color: "var(--orange-400)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>// how to embed</div>
+                {[
+                  { num: "01", title: "Publish your agent", body: "Click \"Publish Agent\" at the top to generate your unique widget token." },
+                  { num: "02", title: "Copy the snippet", body: "Use the copy button above to grab the full embed code." },
+                  { num: "03", title: "Paste into your website", body: "Drop the snippet before the closing </body> tag on any HTML page — works with any website builder." },
+                  { num: "04", title: "Your widget goes live", body: "The chat bubble appears instantly on your site. Visitors can chat with your agent right away." },
+                ].map(s => (
+                  <div key={s.num} className="install-step">
+                    <div className="install-step-num">{s.num}</div>
+                    <div className="install-step-body"><strong>{s.title}</strong>{s.body}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* ── WEBSITE PANEL ── */}
+          {dest === "website" && (
+            <div className="website-mock page-enter">
+              <div className="website-mock-icon">🌐</div>
+              <div className="website-mock-title">Website Builder Integration</div>
+              <div className="website-mock-desc">
+                One-click deployment to popular website builders like Webflow, Squarespace, Wix, and WordPress — no code required.
+              </div>
+              <div className="coming-soon-badge">// coming soon</div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
