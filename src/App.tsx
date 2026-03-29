@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 
 const CSS = `
@@ -1922,16 +1922,19 @@ export default function App() {
   const [user, setUser] = useState<string | null>(null);
   const bootAnimDoneRef = useRef(false);
   const verifyDoneRef = useRef(false);
+  const setBootingRef = useRef(setBooting);
+
+  const handleBootAnimDone = useCallback(() => {
+    bootAnimDoneRef.current = true;
+    if (bootAnimDoneRef.current && verifyDoneRef.current) {
+      setBootingRef.current(false);
+    }
+  }, []);
 
   function tryFinishBoot() {
     if (bootAnimDoneRef.current && verifyDoneRef.current) {
       setBooting(false);
     }
-  }
-
-  function handleBootAnimDone() {
-    bootAnimDoneRef.current = true;
-    tryFinishBoot();
   }
   const [page, setPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
