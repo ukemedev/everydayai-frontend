@@ -1042,7 +1042,7 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 type DeployDest = "socials" | "custom" | "website";
 type SocialPlatform = "whatsapp" | "instagram" | "messenger";
 
-function DeployPage({ toast, refreshKey }: { toast: (m: string) => void; refreshKey: number }) {
+function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void; refreshKey: number; setPage: (p: Page) => void }) {
   const { agents, loading, error } = useAgents(refreshKey);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [publishing, setPublishing] = useState(false);
