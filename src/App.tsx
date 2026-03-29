@@ -407,6 +407,48 @@ const CSS = `
   .deploy-how-step.active .deploy-how-label { color: var(--orange-400); }
   @media (max-width: 480px) { .deploy-how-steps { gap: 4px; } .deploy-how-step { padding: 0 4px; } .deploy-how-step:not(:last-child)::after { display: none; } }
 
+  /* ── BOOT LOADER ── */
+  @keyframes bootFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bootFadeOut { from { opacity: 1; } to { opacity: 0; pointer-events: none; } }
+  @keyframes progressFill { from { width: 0%; } to { width: 100%; } }
+  @keyframes cursorBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes bootGlow { 0%,100% { text-shadow: 0 0 8px rgba(255,85,0,0.6); } 50% { text-shadow: 0 0 20px rgba(255,85,0,1), 0 0 40px rgba(255,85,0,0.4); } }
+
+  .boot-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #000000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px;
+    transition: opacity 0.6s ease;
+  }
+  .boot-screen.fading { opacity: 0; pointer-events: none; }
+
+  .boot-logo-wrap { margin-bottom: 48px; text-align: center; animation: bootFadeIn 0.5s ease; }
+  .boot-logo-text {
+    font-family: var(--font-sans); font-size: clamp(28px, 6vw, 44px); font-weight: 700;
+    color: #ffffff; letter-spacing: -0.02em;
+    animation: bootGlow 2.5s ease-in-out infinite;
+  }
+  .boot-logo-bracket { color: #ff5500; }
+  .boot-logo-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #555555; letter-spacing: 0.12em; margin-top: 6px; }
+
+  .boot-terminal { width: 100%; max-width: 480px; margin-bottom: 36px; }
+  .boot-line {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 2;
+    display: flex; align-items: center; gap: 10px;
+    animation: bootFadeIn 0.3s ease both;
+  }
+  .boot-line-prefix { color: #ff5500; flex-shrink: 0; }
+  .boot-line-text { color: #555555; }
+  .boot-line-text.ok { color: #00cc66; }
+  .boot-line-text.active { color: #888888; }
+  .boot-cursor { display: inline-block; width: 8px; height: 14px; background: #ff5500; margin-left: 4px; animation: cursorBlink 0.9s step-end infinite; vertical-align: middle; }
+
+  .boot-progress-wrap { width: 100%; max-width: 480px; }
+  .boot-progress-bar-bg { height: 2px; background: #1a1a1a; border-radius: 1px; overflow: hidden; margin-bottom: 10px; }
+  .boot-progress-bar-fill { height: 100%; background: #ff5500; border-radius: 1px; box-shadow: 0 0 8px rgba(255,85,0,0.6); transition: width 0.4s ease; }
+  .boot-progress-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #333333; letter-spacing: 0.1em; text-align: right; }
+
   @media (max-width: 1024px) {
     .stats-row { grid-template-columns: repeat(2,1fr); }
     .studio-left { width: 320px; }
@@ -488,6 +530,79 @@ function useAgents(refreshKey = 0) {
   }, [refreshKey]);
 
   return { agents, loading, error };
+}
+
+const BOOT_STEPS = [
+  { text: "initializing everydayai runtime...", delay: 0 },
+  { text: "loading workspace modules...", delay: 380 },
+  { text: "connecting to agent network...", delay: 760 },
+  { text: "verifying session credentials...", delay: 1080 },
+  { text: "ready.", delay: 1400 },
+];
+
+function BootLoader({ onDone }: { onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const [fading, setFading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    BOOT_STEPS.forEach((s, i) => {
+      timers.push(setTimeout(() => {
+        setStep(i + 1);
+        setProgress(Math.round(((i + 1) / BOOT_STEPS.length) * 100));
+      }, s.delay));
+    });
+
+    timers.push(setTimeout(() => setFading(true), 1900));
+    timers.push(setTimeout(() => onDone(), 2500));
+
+    return () => timers.forEach(clearTimeout);
+  }, [onDone]);
+
+  const visibleSteps = BOOT_STEPS.slice(0, step);
+  const isDone = step >= BOOT_STEPS.length;
+
+  return (
+    <div className={`boot-screen${fading ? " fading" : ""}`}>
+      <div className="boot-logo-wrap">
+        <div className="boot-logo-text">
+          <span className="boot-logo-bracket">[</span>
+          EverydayAI
+          <span className="boot-logo-bracket">]</span>
+        </div>
+        <div className="boot-logo-tag">// no-code ai agent platform</div>
+      </div>
+
+      <div className="boot-terminal">
+        {visibleSteps.map((s, i) => {
+          const isLast = i === visibleSteps.length - 1;
+          const done = !isLast || isDone;
+          return (
+            <div
+              key={i}
+              className="boot-line"
+              style={{ animationDelay: "0ms" }}
+            >
+              <span className="boot-line-prefix">&gt;</span>
+              <span className={`boot-line-text${done ? " ok" : " active"}`}>
+                {s.text}
+                {isLast && !isDone && <span className="boot-cursor" />}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="boot-progress-wrap">
+        <div className="boot-progress-bar-bg">
+          <div className="boot-progress-bar-fill" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="boot-progress-label">{progress}%</div>
+      </div>
+    </div>
+  );
 }
 
 function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
@@ -1435,6 +1550,7 @@ const PAGE_TITLES: Record<Page, string> = {
 };
 
 export default function App() {
+  const [booting, setBooting] = useState(true);
   const [user, setUser] = useState<string | null>(() => {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("userEmail");
@@ -1503,13 +1619,18 @@ export default function App() {
   }
 
   if (!user) return (
-    <div className="app" data-theme={theme}>
-      <AuthPage onAuth={handleAuth} />
-    </div>
+    <>
+      {booting && <BootLoader onDone={() => setBooting(false)} />}
+      <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
+        <AuthPage onAuth={handleAuth} />
+      </div>
+    </>
   );
 
   return (
-    <div className="app">
+    <>
+      {booting && <BootLoader onDone={() => setBooting(false)} />}
+      <div className="app" style={{ visibility: booting ? "hidden" : "visible" }}>
       <div className="scanlines" />
       <div className="layout">
         <Sidebar
@@ -1548,5 +1669,6 @@ export default function App() {
       {modal && <NewAgentModal onClose={() => setModal(false)} onCreated={onAgentCreated} />}
       {toastMsg && <Toast msg={toastMsg} onDone={() => setToastMsg(null)} />}
     </div>
+    </>
   );
 }
