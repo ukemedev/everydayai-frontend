@@ -826,9 +826,8 @@ function DeployPage({ toast, refreshKey }: { toast: (m: string) => void; refresh
       setWidgetTokens(t => ({ ...t, [agentId]: widgetToken }));
       toast("Agent published!");
     } catch (e: unknown) {
-      const msg = axios.isAxiosError(e) && e.response?.data?.message
-        ? e.response.data.message
-        : "Publish failed. Please try again.";
+      const _d = axios.isAxiosError(e) ? e.response?.data : null;
+      const msg = _d?.detail || _d?.message || (typeof _d === "string" ? _d : null) || "Publish failed. Please try again.";
       setPublishErrors(err => ({ ...err, [agentId]: msg }));
       toast("Publish failed.");
     } finally {
@@ -928,9 +927,8 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
       setSaveOk(true);
       toast("API key saved.");
     } catch (e: unknown) {
-      const msg = axios.isAxiosError(e) && e.response?.data?.message
-        ? e.response.data.message
-        : "Failed to save API key. Please try again.";
+      const _d2 = axios.isAxiosError(e) ? e.response?.data : null;
+      const msg = _d2?.detail || _d2?.message || (typeof _d2 === "string" ? _d2 : null) || "Failed to save API key. Please try again.";
       setSaveErr(msg);
     } finally {
       setSaving(false);
@@ -1013,8 +1011,10 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
       );
       onCreated();
     } catch (e: unknown) {
-      if (axios.isAxiosError(e) && e.response?.data?.message) {
-        setErr(e.response.data.message);
+      if (axios.isAxiosError(e)) {
+        const d = e.response?.data;
+        const msg = d?.detail || d?.message || (typeof d === "string" ? d : null) || e.message || "Failed to create agent. Please try again.";
+        setErr(typeof msg === "object" ? JSON.stringify(msg) : msg);
       } else {
         setErr("Failed to create agent. Please try again.");
       }
