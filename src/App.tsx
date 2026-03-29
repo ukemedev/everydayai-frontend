@@ -1012,9 +1012,13 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
       onCreated();
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
-        const d = e.response?.data;
-        const msg = d?.detail || d?.message || (typeof d === "string" ? d : null) || e.message || "Failed to create agent. Please try again.";
-        setErr(typeof msg === "object" ? JSON.stringify(msg) : msg);
+        if (!e.response) {
+          setErr("Cannot reach the server. Please check your connection, then log out and log back in.");
+        } else {
+          const d = e.response.data;
+          const msg = d?.detail || d?.message || (typeof d === "string" ? d : null) || "Failed to create agent. Please try again.";
+          setErr(typeof msg === "object" ? JSON.stringify(msg) : msg);
+        }
       } else {
         setErr("Failed to create agent. Please try again.");
       }
@@ -1090,6 +1094,21 @@ export default function App() {
     style.textContent = CSS;
     document.head.appendChild(style);
     return () => { document.head.removeChild(style); };
+  }, []);
+
+  useEffect(() => {
+    axios.defaults.timeout = 12000;
+    const id = axios.interceptors.response.use(
+      r => r,
+      err => {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          localStorage.removeItem("token");
+          setUser(null);
+        }
+        return Promise.reject(err);
+      }
+    );
+    return () => axios.interceptors.response.eject(id);
   }, []);
 
   if (!user) return <div className="app"><AuthPage onAuth={setUser} /></div>;
