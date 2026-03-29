@@ -305,7 +305,7 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-        setErr("");
+        setSaveErr("");
     if (!email || !pass) { setErr("All fields required."); return; }
     if (pass.length < 6) { setErr("Password must be 6+ characters."); return; }
     const url = mode === "login"
