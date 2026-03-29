@@ -1919,11 +1919,20 @@ const PAGE_TITLES: Record<Page, string> = {
 
 export default function App() {
   const [booting, setBooting] = useState(true);
-  const [user, setUser] = useState<string | null>(() => {
-    const token = localStorage.getItem("token");
-    const email = localStorage.getItem("userEmail");
-    return token && email ? email : null;
-  });
+  const [user, setUser] = useState<string | null>(null);
+  const bootAnimDoneRef = useRef(false);
+  const verifyDoneRef = useRef(false);
+
+  function tryFinishBoot() {
+    if (bootAnimDoneRef.current && verifyDoneRef.current) {
+      setBooting(false);
+    }
+  }
+
+  function handleBootAnimDone() {
+    bootAnimDoneRef.current = true;
+    tryFinishBoot();
+  }
   const [page, setPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modal, setModal] = useState(false);
@@ -1975,6 +1984,36 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const email = localStorage.getItem("userEmail");
+
+    if (!token || !email) {
+      verifyDoneRef.current = true;
+      tryFinishBoot();
+      return;
+    }
+
+    fetch("https://everydayai-backend-production.up.railway.app/agents/", {
+      headers: { Authorization: "Bearer " + token },
+    })
+      .then(r => {
+        if (r.status === 401 || r.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userEmail");
+        } else {
+          setUser(email);
+        }
+      })
+      .catch(() => {
+        setUser(email);
+      })
+      .finally(() => {
+        verifyDoneRef.current = true;
+        tryFinishBoot();
+      });
+  }, []);
+
+  useEffect(() => {
     axios.defaults.timeout = 12000;
     const id = axios.interceptors.response.use(
       r => r,
@@ -2003,7 +2042,7 @@ export default function App() {
 
   if (!user) return (
     <>
-      {booting && <BootLoader onDone={() => setBooting(false)} />}
+      {booting && <BootLoader onDone={handleBootAnimDone} />}
       <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
         <AuthPage onAuth={handleAuth} />
       </div>
@@ -2012,7 +2051,7 @@ export default function App() {
 
   return (
     <>
-      {booting && <BootLoader onDone={() => setBooting(false)} />}
+      {booting && <BootLoader onDone={handleBootAnimDone} />}
       <div className="app" style={{ visibility: booting ? "hidden" : "visible" }}>
       <div className="scanlines" />
       <div className="layout">
