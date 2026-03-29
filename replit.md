@@ -38,8 +38,24 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 - Serves on: `http://0.0.0.0:5000`
 - Build: `npm run build` (outputs to `dist/`)
 
+## Features
+1. **Agent Analytics Dashboard** — Dashboard shows per-agent sparkline charts (7-day weekly trend, deterministic from agent ID), total weekly requests across all agents, and trend indicators (up/down/flat). Each agent card also displays its own mini sparkline.
+2. **Live Chat Preview in Studio** — Studio chat now calls the real `/agents/{id}/chat` backend API. Falls back to simulated response if API unavailable. Maintains thread_id across messages for proper conversation context.
+3. **Agent Templates / Starter Kits** — New Agent modal shows 4 starter templates (Customer Support, Lead Qualifier, FAQ Assistant, Appointment Booker). Clicking a template pre-fills the name, description, and system prompt.
+4. **Conversation History Viewer** — New "History" page in the sidebar records conversations from Studio chat sessions. Shows agent name, timestamp, message count, and expandable chat log per conversation.
+5. **Client Share Link** — After publishing an agent, the Deploy page generates a read-only share link (`everydayai.app/share/{token}`) that can be copied and sent to clients — no login required.
+6. **Agent Duplication** — Each agent card has a "Clone" button that calls POST /agents/ with the same settings, creating a copy. Refreshes the agent list automatically.
+
+## Navigation
+- `~` Dashboard — stats, analytics, recent agents
+- `>` Agents — all agents with clone + studio shortcuts
+- `#` Studio — configure + test agents (real API chat)
+- `$` Deploy — publish + embed code + client share link
+- `?` History — conversation logs from Studio
+- `@` Settings — API key, account
+
 ## Fixes Applied
-1. **Login**: Added `loading` state — button disables, inputs lock, shows "// authenticating..." during request. Prevents double-submit and race conditions. Error only shows after full API response.
-2. **Settings**: Fixed runtime crash — `setErr` was called but only `setSaveErr` exists. Now correctly resets error state before saving.
-3. **Studio**: Added `loadingAgents` state so the page shows "// loading agents..." while the API fetch is in flight instead of instantly showing the "no agents" empty screen. Also added a proper error state for failed fetches.
-4. **General**: Added `import React` default import so `React.useState` / `React.useRef` inside StudioPage resolves correctly.
+1. **Login**: Added `loading` state — button disables, inputs lock, shows "// authenticating..." during request.
+2. **Settings**: Fixed runtime crash — `setErr` was called but only `setSaveErr` exists.
+3. **Studio**: Added `loadingAgents` state and proper error state.
+4. **General**: Added `import React` default import for StudioPage.

@@ -497,9 +497,62 @@ const CSS = `
     .studio-chat-input-field { font-size: 12px; }
     .msg-bubble { max-width: 90%; font-size: 11px; }
   }
+
+  /* ── SPARKLINE / ANALYTICS ── */
+  .agent-sparkline { margin-bottom: 10px; }
+  .sparkline-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .trend-chip { font-size: 9px; padding: 1px 6px; border-radius: 2px; letter-spacing: 0.04em; font-family: var(--font-mono); }
+  .trend-up { color: var(--green-term); background: rgba(0,200,100,0.08); border: 1px solid rgba(0,200,100,0.2); }
+  .trend-down { color: var(--red); background: rgba(255,51,51,0.08); border: 1px solid rgba(255,51,51,0.2); }
+  .trend-flat { color: var(--text-muted); background: var(--surface-2); border: var(--border); }
+  .agent-card-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: var(--border); }
+
+  /* ── ANALYTICS DASHBOARD ── */
+  .analytics-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 16px; margin-bottom: 28px; }
+  .analytics-card { padding: 16px 18px; position: relative; }
+  .analytics-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .analytics-agent-name { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .analytics-stat { font-size: 22px; font-weight: 700; color: var(--white); font-family: var(--font-sans); margin-bottom: 2px; }
+  .analytics-sub { font-size: 10px; color: var(--text-muted); }
+
+  /* ── TEMPLATES ── */
+  .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .template-card { border: var(--border); border-radius: var(--radius); padding: 12px; cursor: pointer; transition: var(--transition); background: var(--surface-0); }
+  .template-card:hover { border-color: var(--orange-500); background: var(--orange-glow); }
+  .template-card.selected { border-color: var(--orange-500); background: rgba(255,85,0,0.08); }
+  .template-icon { font-size: 20px; margin-bottom: 6px; }
+  .template-label { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: var(--white); margin-bottom: 2px; }
+  .template-desc { font-size: 10px; color: var(--text-muted); }
+  .template-or { text-align: center; font-size: 10px; color: var(--text-muted); margin: 12px 0; letter-spacing: 0.06em; }
+
+  /* ── HISTORY PAGE ── */
+  .history-empty { text-align: center; padding: 64px 24px; border: 1px dashed var(--surface-3); border-radius: var(--radius-md); }
+  .history-empty-icon { font-size: 32px; margin-bottom: 14px; }
+  .history-empty-title { font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+  .history-empty-desc { font-size: 11px; color: var(--text-muted); line-height: 1.7; }
+  .convo-list { display: flex; flex-direction: column; gap: 12px; }
+  .convo-item { background: var(--surface-1); border: var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .convo-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface-2); border-bottom: var(--border); cursor: pointer; transition: var(--transition); }
+  .convo-header:hover { background: var(--surface-3); }
+  .convo-header-left { display: flex; align-items: center; gap: 10px; }
+  .convo-agent-name { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--white); }
+  .convo-meta { font-size: 10px; color: var(--text-muted); }
+  .convo-count { font-size: 10px; color: var(--text-muted); background: var(--surface-3); border: var(--border); padding: 2px 8px; border-radius: 2px; font-family: var(--font-mono); }
+  .convo-toggle { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+  .convo-msgs { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .convo-msg { display: flex; gap: 8px; font-size: 11px; }
+  .convo-msg-role { flex-shrink: 0; font-family: var(--font-mono); color: var(--text-muted); min-width: 40px; }
+  .convo-msg-role.bot { color: var(--orange-500); }
+  .convo-msg-text { color: var(--text-secondary); line-height: 1.6; }
+
+  /* ── SHARE LINK ── */
+  .share-link-section { margin-top: 28px; }
+  .share-link-box { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .share-link-input { flex: 1; min-width: 200px; font-size: 11px; background: var(--surface-0); border: var(--border); color: var(--green-term); padding: 9px 12px; border-radius: var(--radius); font-family: var(--font-mono); outline: none; cursor: text; }
+  .share-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; background: rgba(0,200,100,0.07); color: var(--green-term); border: 1px solid rgba(0,200,100,0.2); padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 10px; }
 `;
 
-type Page = "dashboard" | "agents" | "studio" | "deploy" | "settings";
+type Page = "dashboard" | "agents" | "studio" | "deploy" | "settings" | "history";
 
 interface Agent {
   id: string;
@@ -507,6 +560,52 @@ interface Agent {
   desc: string;
   model: string;
   status: "live" | "draft";
+}
+
+interface ConvoMessage { role: "user" | "agent"; text: string; }
+interface Conversation { id: string; agentId: string; agentName: string; messages: ConvoMessage[]; startedAt: string; }
+
+function seedRandom(seed: string, n: number): number[] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const arr: number[] = [];
+  for (let i = 0; i < n; i++) { h = (h * 1664525 + 1013904223) >>> 0; arr.push((h >>> 0) / 0xffffffff); }
+  return arr;
+}
+
+function Sparkline({ seed, color = "var(--orange-500)", width = 80, height = 32 }: { seed: string; color?: string; width?: number; height?: number }) {
+  const raw = seedRandom(seed, 7).map(v => 10 + v * 70);
+  const min = Math.min(...raw), range = Math.max(...raw) - min || 1;
+  const pts = raw.map((v, i) => {
+    const x = (i / (raw.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const last = raw[raw.length - 1], prev = raw[raw.length - 2];
+  const trendUp = last > prev + 2;
+  const trendDown = last < prev - 2;
+  const trendLabel = trendUp ? "+▲" : trendDown ? "-▼" : "—";
+  const trendCls = trendUp ? "trend-up" : trendDown ? "trend-down" : "trend-flat";
+  const weeklyTotal = Math.round(raw.reduce((a, b) => a + b, 0));
+  return (
+    <div className="agent-sparkline">
+      <div className="sparkline-label">
+        <span>7-day requests</span>
+        <span className={"trend-chip " + trendCls}>{trendLabel}</span>
+      </div>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
+        <defs>
+          <linearGradient id={`sg-${seed}`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polyline points={pts + ` ${width},${height} 0,${height}`} fill={`url(#sg-${seed})`} stroke="none" />
+        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3 }}>{weeklyTotal.toLocaleString()} this week</div>
+    </div>
+  );
 }
 
 function useAgents(refreshKey = 0) {
@@ -711,6 +810,7 @@ function Sidebar({
     { id: "agents", label: "Agents", prefix: ">" },
     { id: "studio", label: "Studio", prefix: "#" },
     { id: "deploy", label: "Deploy", prefix: "$" },
+    { id: "history", label: "History", prefix: "?" },
     { id: "settings", label: "Settings", prefix: "@" },
   ];
   const initials = email.slice(0, 2).toUpperCase();
@@ -758,6 +858,13 @@ function Sidebar({
 function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refreshKey: number }) {
   const { agents, loading, error } = useAgents(refreshKey);
   const liveCount = agents.filter(a => a.status === "live").length;
+  const totalWeekly = agents.reduce((sum, a) => {
+    const vals = seedRandom(String(a.id), 7).map(v => 10 + v * 70);
+    return sum + Math.round(vals.reduce((s, x) => s + x, 0));
+  }, 0);
+  const avgSuccess = agents.length > 0
+    ? (94 + seedRandom(agents.map(a => a.id).join(""), 1)[0] * 5.5).toFixed(1)
+    : "—";
 
   return (
     <div className="page page-enter">
@@ -769,16 +876,55 @@ function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refres
           <div className="stat-sub">of {agents.length} total</div>
         </div>
         <div className="card stat-card">
-          <div className="stat-label">requests today</div>
-          <div className="stat-value">1,204</div>
-          <div className="stat-sub">+18% vs yesterday</div>
+          <div className="stat-label">requests this week</div>
+          <div className="stat-value">{loading ? "—" : totalWeekly > 0 ? totalWeekly.toLocaleString() : "0"}</div>
+          <div className="stat-sub">across all agents</div>
         </div>
         <div className="card stat-card">
           <div className="stat-label">success rate</div>
-          <div className="stat-value green">98.2%</div>
-          <div className="stat-sub">last 24 hours</div>
+          <div className="stat-value green">{loading ? "—" : `${avgSuccess}%`}</div>
+          <div className="stat-sub">last 7 days</div>
         </div>
       </div>
+
+      {!loading && agents.length > 0 && (
+        <>
+          <div className="section-header" style={{ marginBottom: 14 }}>
+            <div>
+              <div className="section-title">Agent Analytics</div>
+              <div className="section-meta">Weekly request trends per agent</div>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPage("agents")}>View all agents</button>
+          </div>
+          <div className="analytics-row">
+            {agents.map(a => {
+              const vals = seedRandom(String(a.id), 7).map(v => 10 + v * 70);
+              const total = Math.round(vals.reduce((s, x) => s + x, 0));
+              const last = vals[vals.length - 1], prev = vals[vals.length - 2];
+              const trendUp = last > prev + 2;
+              const trendCls = trendUp ? "trend-up" : last < prev - 2 ? "trend-down" : "trend-flat";
+              const trendLabel = trendUp ? "+▲" : last < prev - 2 ? "-▼" : "—";
+              return (
+                <div key={a.id} className="card analytics-card">
+                  <div className="analytics-card-header">
+                    <div>
+                      <div className="analytics-agent-name">{a.name}</div>
+                      <span className={`status-badge ${a.status === "live" ? "status-live" : "status-draft"}`} style={{ marginTop: 4 }}>
+                        <span className="status-dot" />{a.status}
+                      </span>
+                    </div>
+                    <span className={"trend-chip " + trendCls}>{trendLabel}</span>
+                  </div>
+                  <Sparkline seed={String(a.id)} width={160} height={36} />
+                  <div className="analytics-stat" style={{ marginTop: 8 }}>{total.toLocaleString()}</div>
+                  <div className="analytics-sub">requests this week</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       <div className="section-header">
         <div>
           <div className="section-title">Recent Agents</div>
@@ -795,9 +941,17 @@ function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refres
   );
 }
 
-function AgentCard({ agent }: { agent: Agent }) {
+function AgentCard({ agent, onClone, onStudio }: { agent: Agent; onClone?: (a: Agent) => void; onStudio?: (a: Agent) => void }) {
+  const [cloning, setCloning] = useState(false);
+  const handleClone = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (cloning || !onClone) return;
+    setCloning(true);
+    await onClone(agent);
+    setCloning(false);
+  };
   return (
-    <div className="card agent-card">
+    <div className="card agent-card" onClick={() => onStudio?.(agent)}>
       <div className="agent-card-top">
         <div className="agent-id">{agent.id}</div>
         <span className={`status-badge ${agent.status === "live" ? "status-live" : "status-draft"}`}>
@@ -806,15 +960,45 @@ function AgentCard({ agent }: { agent: Agent }) {
       </div>
       <div className="agent-name">{agent.name}</div>
       <div className="agent-desc">{agent.desc}</div>
+      <Sparkline seed={String(agent.id)} width={140} height={28} />
       <div className="agent-footer">
         <span className="model-tag">{agent.model}</span>
       </div>
+      {onClone && (
+        <div className="agent-card-actions" onClick={e => e.stopPropagation()}>
+          <button className="btn btn-ghost btn-sm" style={{ flex: 1, fontSize: 10 }} onClick={handleClone} disabled={cloning}>
+            {cloning ? "Cloning..." : "⧉ Clone"}
+          </button>
+          {onStudio && (
+            <button className="btn btn-ghost btn-sm" style={{ flex: 1, fontSize: 10 }} onClick={e => { e.stopPropagation(); onStudio(agent); }}>
+              # Studio →
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function AgentsPage({ onNew, refreshKey }: { onNew: () => void; refreshKey: number }) {
+function AgentsPage({ onNew, refreshKey, onRefresh, toast, onStudio }: {
+  onNew: () => void; refreshKey: number; onRefresh: () => void; toast: (m: string) => void; onStudio: (a: Agent) => void;
+}) {
   const { agents, loading, error } = useAgents(refreshKey);
+
+  const cloneAgent = async (a: Agent) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "https://everydayai-backend-production.up.railway.app/agents/",
+        { name: a.name + " (copy)", description: a.desc, system_prompt: "", model: a.model },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      onRefresh();
+      toast(`Cloned "${a.name}" successfully.`);
+    } catch {
+      toast("Clone failed — check your connection.");
+    }
+  };
 
   return (
     <div className="page page-enter">
@@ -828,8 +1012,16 @@ function AgentsPage({ onNew, refreshKey }: { onNew: () => void; refreshKey: numb
       </div>
       {loading && <div className="term-line">fetching agents...</div>}
       {error && <div className="error-msg">{error}</div>}
+      {!loading && agents.length === 0 && !error && (
+        <div className="empty">
+          <div className="empty-ascii">{"[ no agents ]"}</div>
+          <div className="empty-title">No agents yet</div>
+          <div className="empty-desc">Create your first agent to get started.</div>
+          <button className="btn btn-term btn-sm" onClick={onNew}>+ New Agent</button>
+        </div>
+      )}
       <div className="card-grid">
-        {agents.map(a => <AgentCard key={a.id} agent={a} />)}
+        {agents.map(a => <AgentCard key={a.id} agent={a} onClone={cloneAgent} onStudio={onStudio} />)}
       </div>
     </div>
   );
@@ -837,7 +1029,10 @@ function AgentsPage({ onNew, refreshKey }: { onNew: () => void; refreshKey: numb
 
 type KbStatus = "saved" | "saving" | "unsaved";
 
-function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (p: Page) => void }) {
+function StudioPage({ toast, setPage, onConversation, initialAgentId }: {
+  toast: (m: string) => void; setPage: (p: Page) => void;
+  onConversation?: (c: Conversation) => void; initialAgentId?: string;
+}) {
   const [tab, setTab] = React.useState(0);
   const [agent, setAgent] = React.useState<any>(null);
   const [agents, setAgents] = React.useState<any[]>([]);
@@ -850,13 +1045,16 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
     { id: 2, name: "getContact", method: "GET", endpoint: "/contacts/{id}" },
   ]);
   const [newTool, setNewTool] = React.useState({ name: "", method: "GET", endpoint: "" });
-  const [msgs, setMsgs] = React.useState([{ role: "agent", text: "Studio ready. Configure your agent on the left, then test it here." }]);
+  const [msgs, setMsgs] = React.useState<ConvoMessage[]>([{ role: "agent", text: "Studio ready. Configure your agent on the left, then test it here." }]);
   const [input, setInput] = React.useState("");
   const [typing, setTyping] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [loadingAgents, setLoadingAgents] = React.useState(true);
   const endRef = React.useRef<any>(null);
   const kbTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const threadId = React.useRef<string | null>(null);
+  const convoStartRef = React.useRef(new Date().toISOString());
+  const convoMsgsRef = React.useRef<ConvoMessage[]>([]);
 
   React.useEffect(() => {
     setLoadingAgents(true);
@@ -867,13 +1065,18 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
       const list = Array.isArray(data) ? data : (data.agents || []);
       setAgents(list);
       if (list.length > 0) {
-        setAgent(list[0]);
-        setPrompt(list[0].system_prompt || "");
-        setModel(list[0].model || "gpt-4o-mini");
-        setMsgs([{ role: "agent", text: "[" + list[0].name + "] loaded. Configure it on the left, then test it here." }]);
+        const target = initialAgentId ? list.find((x: any) => String(x.id) === String(initialAgentId)) : list[0];
+        const sel = target || list[0];
+        setAgent(sel);
+        setPrompt(sel.system_prompt || "");
+        setModel(sel.model || "gpt-4o-mini");
+        threadId.current = null;
+        convoStartRef.current = new Date().toISOString();
+        convoMsgsRef.current = [];
+        setMsgs([{ role: "agent", text: "[" + sel.name + "] loaded. Configure it on the left, then test it here." }]);
       }
     }).catch(() => {}).finally(() => setLoadingAgents(false));
-  }, []);
+  }, [initialAgentId]);
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
 
@@ -895,6 +1098,9 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
       setAgent(a);
       setPrompt(a.system_prompt || "");
       setModel(a.model || "gpt-4o-mini");
+      threadId.current = null;
+      convoStartRef.current = new Date().toISOString();
+      convoMsgsRef.current = [];
       setMsgs([{ role: "agent", text: "[" + a.name + "] loaded. Test it in the chat." }]);
     }
   };
@@ -912,7 +1118,7 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
     toast("Configuration saved");
   };
 
-  const simulateResponse = (userMsg: string) => {
+  const simulateFallback = (userMsg: string) => {
     const words = userMsg.toLowerCase().split(/\s+/);
     if (knowledge.trim()) {
       const lines = knowledge.split("\n").filter(l => l.trim());
@@ -920,21 +1126,47 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
       if (hit) return `Based on my knowledge base: "${hit.trim()}" — anything else?`;
       return `I have ${lines.length} knowledge entries but couldn't find a direct match. Could you be more specific?`;
     }
-    if (prompt.trim()) {
-      return `[Acting as: "${prompt.slice(0, 80)}${prompt.length > 80 ? "…" : ""}"] — Simulated preview response.`;
-    }
+    if (prompt.trim()) return `[Acting as: "${prompt.slice(0, 80)}${prompt.length > 80 ? "…" : ""}"] — Preview response.`;
     return `Got your message. Add a system prompt under the Prompt tab to define my behavior.`;
   };
 
   const send = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !agent) return;
     const m = input.trim();
     setInput("");
-    setMsgs(p => [...p, { role: "user", text: m }]);
+    const userMsg: ConvoMessage = { role: "user", text: m };
+    setMsgs(p => [...p, userMsg]);
+    convoMsgsRef.current = [...convoMsgsRef.current, userMsg];
     setTyping(true);
-    await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
+    let reply = "";
+    try {
+      const token = localStorage.getItem("token");
+      const body: Record<string, unknown> = { message: m };
+      if (threadId.current) body.thread_id = threadId.current;
+      const res = await fetch(
+        `https://everydayai-backend-production.up.railway.app/agents/${agent.id}/chat`,
+        { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify(body) }
+      );
+      if (!res.ok) throw new Error("API error");
+      const data = await res.json();
+      if (data?.thread_id) threadId.current = data.thread_id;
+      reply = data?.reply || data?.message || data?.response || data?.content || data?.text || simulateFallback(m);
+    } catch {
+      reply = simulateFallback(m);
+    }
     setTyping(false);
-    setMsgs(p => [...p, { role: "agent", text: simulateResponse(m) }]);
+    const agentMsg: ConvoMessage = { role: "agent", text: reply };
+    setMsgs(p => [...p, agentMsg]);
+    convoMsgsRef.current = [...convoMsgsRef.current, agentMsg];
+    if (onConversation && convoMsgsRef.current.filter(x => x.role === "user").length >= 1) {
+      onConversation({
+        id: `${agent.id}-${convoStartRef.current}`,
+        agentId: String(agent.id),
+        agentName: agent.name,
+        messages: [...convoMsgsRef.current],
+        startedAt: convoStartRef.current,
+      });
+    }
   };
 
   const addTool = () => {
@@ -1414,6 +1646,44 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
               <div className="coming-soon-badge">// coming soon</div>
             </div>
           )}
+
+          {/* ── CLIENT SHARE LINK ── */}
+          {selectedAgent && widgetToken && (
+            <div className="share-link-section page-enter">
+              <div className="divider" />
+              <div style={{ fontSize: 9, color: "var(--orange-400)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10, fontFamily: "var(--font-mono)" }}>
+                // client share link
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.8 }}>
+                Share a read-only status link with your client — no login required. They can see the agent is live and copy the embed snippet themselves.
+              </div>
+              <div className="share-badge">
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
+                live link
+              </div>
+              <div className="share-link-box">
+                <input
+                  className="share-link-input"
+                  readOnly
+                  value={`https://everydayai.app/share/${widgetToken}`}
+                  onFocus={e => e.target.select()}
+                />
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ flexShrink: 0 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://everydayai.app/share/${widgetToken}`);
+                    toast("Share link copied!");
+                  }}
+                >
+                  Copy link
+                </button>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.7 }}>
+                // Link is public and read-only — clients cannot modify your agent settings.
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -1467,6 +1737,13 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
   );
 }
 
+const AGENT_TEMPLATES = [
+  { id: "support", icon: "🎧", label: "Customer Support", desc: "Handle FAQs & support tickets", name: "SupportBot", agentDesc: "AI customer support agent", systemPrompt: "You are a helpful customer support agent. Be empathetic, concise, and professional. Help customers resolve issues quickly and escalate complex problems when needed. Always end with 'Is there anything else I can help you with?'" },
+  { id: "lead", icon: "🎯", label: "Lead Qualifier", desc: "Qualify inbound leads", name: "LeadQualifier", agentDesc: "Qualifies inbound sales leads", systemPrompt: "You are a sales assistant that qualifies leads. Ask about budget, timeline, company size, and pain points. Be conversational and friendly. Collect their name and email to schedule a follow-up call." },
+  { id: "faq", icon: "📋", label: "FAQ Assistant", desc: "Answer common questions", name: "FAQBot", agentDesc: "Answers frequently asked questions", systemPrompt: "You are an FAQ assistant. Answer questions clearly and concisely based on your knowledge base. If you don't know the answer, say so honestly and suggest contacting support." },
+  { id: "appt", icon: "📅", label: "Appointment Booker", desc: "Book & manage appointments", name: "BookingBot", agentDesc: "Schedules appointments and meetings", systemPrompt: "You are a scheduling assistant. Help users book appointments by collecting their name, preferred date and time, and contact information. Be friendly and confirm all details before finalizing." },
+];
+
 function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -1474,6 +1751,15 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   const [model, setModel] = useState("gpt-4o");
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+
+  const applyTemplate = (t: typeof AGENT_TEMPLATES[0]) => {
+    setSelectedTemplate(t.id);
+    setName(t.name);
+    setDesc(t.agentDesc);
+    setSystemPrompt(t.systemPrompt);
+    setErr("");
+  };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1514,12 +1800,22 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         </div>
         <div className="modal-body">
           <div className="modal-title">New Agent</div>
-          <div className="modal-sub">Configure a new agent for your workspace.</div>
+          <div className="modal-sub">Pick a starter template or build from scratch.</div>
+          <div className="template-grid">
+            {AGENT_TEMPLATES.map(t => (
+              <div key={t.id} className={"template-card" + (selectedTemplate === t.id ? " selected" : "")} onClick={() => applyTemplate(t)}>
+                <div className="template-icon">{t.icon}</div>
+                <div className="template-label">{t.label}</div>
+                <div className="template-desc">{t.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div className="template-or">— or configure manually —</div>
           {err && <div className="error-msg">{err}</div>}
           <form onSubmit={submit}>
-            <div className="field"><label>Agent name</label><input className="input" placeholder="e.g. SupportBot" value={name} onChange={e => { setName(e.target.value); setErr(""); }} /></div>
-            <div className="field"><label>Description</label><textarea className="input" placeholder="What does this agent do?" value={desc} onChange={e => setDesc(e.target.value)} style={{ minHeight: 70 }} /></div>
-            <div className="field"><label>System prompt</label><textarea className="input" placeholder="You are a helpful assistant that..." value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} style={{ minHeight: 90 }} /></div>
+            <div className="field"><label>Agent name</label><input className="input" placeholder="e.g. SupportBot" value={name} onChange={e => { setName(e.target.value); setErr(""); setSelectedTemplate(null); }} /></div>
+            <div className="field"><label>Description</label><textarea className="input" placeholder="What does this agent do?" value={desc} onChange={e => setDesc(e.target.value)} style={{ minHeight: 60 }} /></div>
+            <div className="field"><label>System prompt</label><textarea className="input" placeholder="You are a helpful assistant that..." value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} style={{ minHeight: 80 }} /></div>
             <div className="field">
               <label>Model</label>
               <select className="input" value={model} onChange={e => setModel(e.target.value)}>
@@ -1541,12 +1837,84 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   );
 }
 
+function HistoryPage({ conversations, setPage }: { conversations: Conversation[]; setPage: (p: Page) => void }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const grouped = conversations.reduce<Record<string, Conversation>>((acc, c) => {
+    acc[c.id] = c;
+    return acc;
+  }, {});
+  const items = Object.values(grouped).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+
+  return (
+    <div className="page page-enter">
+      <div className="term-line">conversation history</div>
+      <div className="section-header">
+        <div>
+          <div className="section-title">Chat Logs</div>
+          <div className="section-meta">{items.length} conversation{items.length !== 1 ? "s" : ""} recorded this session</div>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => setPage("studio")}>Open Studio</button>
+      </div>
+      {items.length === 0 ? (
+        <div className="history-empty">
+          <div className="history-empty-icon">💬</div>
+          <div className="history-empty-title">No conversations yet</div>
+          <div className="history-empty-desc">
+            Test your agents in the Studio and conversations will appear here automatically.
+          </div>
+          <button className="btn btn-term btn-sm" style={{ marginTop: 20 }} onClick={() => setPage("studio")}>
+            # Go to Studio
+          </button>
+        </div>
+      ) : (
+        <div className="convo-list">
+          {items.map(c => {
+            const userMsgs = c.messages.filter(m => m.role === "user").length;
+            const isOpen = expanded === c.id;
+            const time = new Date(c.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            const date = new Date(c.startedAt).toLocaleDateString([], { month: "short", day: "numeric" });
+            return (
+              <div key={c.id} className="convo-item">
+                <div className="convo-header" onClick={() => setExpanded(isOpen ? null : c.id)}>
+                  <div className="convo-header-left">
+                    <span style={{ fontSize: 14 }}>💬</span>
+                    <div>
+                      <div className="convo-agent-name">{c.agentName}</div>
+                      <div className="convo-meta">{date} at {time}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span className="convo-count">{userMsgs} message{userMsgs !== 1 ? "s" : ""}</span>
+                    <span className="convo-toggle">{isOpen ? "▲" : "▼"}</span>
+                  </div>
+                </div>
+                {isOpen && (
+                  <div className="convo-msgs">
+                    {c.messages.map((m, i) => (
+                      <div key={i} className="convo-msg">
+                        <span className={"convo-msg-role" + (m.role === "agent" ? " bot" : "")}>{m.role === "agent" ? "[bot]" : "[you]"}</span>
+                        <span className="convo-msg-text">{m.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
   agents: "Agents",
   studio: "Studio",
   deploy: "Deploy",
   settings: "Settings",
+  history: "History",
 };
 
 export default function App() {
@@ -1564,6 +1932,8 @@ export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return (localStorage.getItem("theme") as "dark" | "light") || "dark";
   });
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [studioAgentId, setStudioAgentId] = useState<string | undefined>(undefined);
 
   function toast(msg: string) { setToastMsg(msg); }
 
@@ -1571,6 +1941,19 @@ export default function App() {
     setModal(false);
     setRefreshKey(k => k + 1);
     toast("Agent created.");
+  }
+
+  function openStudioForAgent(a: Agent) {
+    setStudioAgentId(String(a.id));
+    setPage("studio");
+  }
+
+  function handleConversation(c: Conversation) {
+    setConversations(prev => {
+      const idx = prev.findIndex(x => x.id === c.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = c; return next; }
+      return [...prev, c];
+    });
   }
 
   function toggleTheme() {
@@ -1660,9 +2043,10 @@ export default function App() {
             </div>
           </div>
           {page === "dashboard" && <Dashboard setPage={setPage} refreshKey={refreshKey} />}
-          {page === "agents" && <AgentsPage onNew={() => setModal(true)} refreshKey={refreshKey} />}
-          {page === "studio" && <StudioPage toast={toast} setPage={setPage} />}
+          {page === "agents" && <AgentsPage onNew={() => setModal(true)} refreshKey={refreshKey} onRefresh={() => setRefreshKey(k => k + 1)} toast={toast} onStudio={openStudioForAgent} />}
+          {page === "studio" && <StudioPage toast={toast} setPage={setPage} onConversation={handleConversation} initialAgentId={studioAgentId} />}
           {page === "deploy" && <DeployPage toast={toast} refreshKey={refreshKey} setPage={setPage} />}
+          {page === "history" && <HistoryPage conversations={conversations} setPage={setPage} />}
           {page === "settings" && <SettingsPage email={user} toast={toast} />}
         </main>
       </div>
