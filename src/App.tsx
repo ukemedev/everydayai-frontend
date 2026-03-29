@@ -1103,49 +1103,45 @@ function DeployPage({ toast, refreshKey }: { toast: (m: string) => void; refresh
     <div className="page page-enter deploy-page">
       <div className="term-line">deployment</div>
 
-      {/* ── AGENT SELECTOR BAR ── */}
+      {/* ── AGENT SELECTOR BAR — only when agents exist ── */}
       {loading && <div className="term-line">loading agents...</div>}
       {error && <div className="error-msg">{error}</div>}
-      {!loading && !error && agents.length === 0 && (
-        <div className="empty">
-          <div className="empty-title">No agents yet</div>
-          <div className="empty-desc">Create an agent first before deploying.</div>
+
+      {!loading && agents.length > 0 && (
+        <div className="deploy-agent-bar">
+          <div className="deploy-agent-info">
+            <div
+              className="deploy-agent-dot"
+              style={{ background: selectedAgent?.status === "live" ? "var(--green-term)" : "var(--text-muted)" }}
+            />
+            <div style={{ minWidth: 0 }}>
+              <select
+                className="input"
+                style={{ background: "none", border: "none", padding: "0", fontSize: 14, fontFamily: "var(--font-sans)", fontWeight: 600, color: "var(--white)", cursor: "pointer", outline: "none" }}
+                value={selectedAgent?.id ?? ""}
+                onChange={e => {
+                  const a = agents.find(x => String(x.id) === e.target.value) ?? null;
+                  setSelectedAgent(a);
+                  setWidgetToken(null);
+                  setPublishError(null);
+                }}
+              >
+                {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+              <div className="deploy-agent-id">{selectedAgent?.id}</div>
+            </div>
+          </div>
+          <button className="btn btn-term btn-sm" onClick={publish} disabled={publishing || !selectedAgent}>
+            {publishing ? "Publishing..." : selectedAgent?.status === "live" ? "Re-publish" : "Publish Agent"}
+          </button>
         </div>
       )}
 
-      {!loading && agents.length > 0 && (
+      {publishError && <div className="error-msg">{publishError}</div>}
+
+      {/* ── DESTINATION SELECTOR — always visible ── */}
+      {!loading && (
         <>
-          <div className="deploy-agent-bar">
-            <div className="deploy-agent-info">
-              <div
-                className="deploy-agent-dot"
-                style={{ background: selectedAgent?.status === "live" ? "var(--green-term)" : "var(--text-muted)" }}
-              />
-              <div style={{ minWidth: 0 }}>
-                <select
-                  className="input"
-                  style={{ background: "none", border: "none", padding: "0", fontSize: 14, fontFamily: "var(--font-sans)", fontWeight: 600, color: "var(--white)", cursor: "pointer", outline: "none" }}
-                  value={selectedAgent?.id ?? ""}
-                  onChange={e => {
-                    const a = agents.find(x => String(x.id) === e.target.value) ?? null;
-                    setSelectedAgent(a);
-                    setWidgetToken(null);
-                    setPublishError(null);
-                  }}
-                >
-                  {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-                <div className="deploy-agent-id">{selectedAgent?.id}</div>
-              </div>
-            </div>
-            <button className="btn btn-term btn-sm" onClick={publish} disabled={publishing || !selectedAgent}>
-              {publishing ? "Publishing..." : selectedAgent?.status === "live" ? "Re-publish" : "Publish Agent"}
-            </button>
-          </div>
-
-          {publishError && <div className="error-msg">{publishError}</div>}
-
-          {/* ── DESTINATION SELECTOR ── */}
           <div className="deploy-dest-label">Select a Deployment Destination</div>
           <div className="deploy-dest-tabs">
             {([
@@ -1197,7 +1193,11 @@ function DeployPage({ toast, refreshKey }: { toast: (m: string) => void; refresh
           {/* ── CUSTOM CODE PANEL ── */}
           {dest === "custom" && (
             <div className="custom-code-panel page-enter">
-              {!widgetToken ? (
+              {agents.length === 0 ? (
+                <div className="deploy-no-token">
+                  <strong>// no agents yet</strong> — Go to the <span style={{ color: "var(--orange-400)", cursor: "pointer" }} onClick={() => {}}>Agents</span> page to create your first agent, then come back here to publish and get your embed code.
+                </div>
+              ) : !widgetToken ? (
                 <div className="deploy-no-token">
                   <strong>// publish first</strong> — Click "Publish Agent" above to generate your widget token, then your embed snippet will appear here ready to copy.
                 </div>
