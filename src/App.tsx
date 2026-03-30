@@ -172,6 +172,9 @@ const CSS = `
   .auth-switch a { color: var(--orange-400); cursor: pointer; }
   .auth-switch a:hover { color: var(--orange-300); }
   .error-msg { background: rgba(255,51,51,0.08); border: 1px solid rgba(255,51,51,0.25); color: var(--red); padding: 10px 14px; font-size: 11px; margin-bottom: 18px; border-radius: var(--radius); }
+  .info-msg { background: rgba(0,200,100,0.07); border: 1px solid rgba(0,200,100,0.25); color: var(--green-term); padding: 10px 14px; font-size: 11px; margin-bottom: 18px; border-radius: var(--radius); }
+  .auth-link-sm { font-size: 10px; color: var(--text-muted); cursor: pointer; transition: var(--transition); }
+  .auth-link-sm:hover { color: var(--orange-400); }
 
   /* ── FORM ── */
   .field { margin-bottom: 18px; }
@@ -985,28 +988,40 @@ function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
 }
 
 function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [err, setErr] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const { run } = useSpinner();
+
+  function switchMode(m: "login" | "signup" | "forgot") {
+    setMode(m); setErr(""); setInfo("");
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
-    setErr("");
+    setErr(""); setInfo("");
     setLoading(true);
     try {
+      if (mode === "forgot") {
+        await axios.post(
+          "https://everydayai-backend-production.up.railway.app/auth/forgot-password",
+          { email }
+        );
+        setInfo("Password reset email sent. Check your inbox.");
+        setLoading(false);
+        return;
+      }
       await run(async () => {
-        // If signing up, register first — then fall through to auto-login
         if (mode === "signup") {
           await axios.post(
             "https://everydayai-backend-production.up.railway.app/auth/signup",
             { email, password: pass }
           );
         }
-        // Login (for both login mode and auto-login after signup)
         const res = await axios.post(
           "https://everydayai-backend-production.up.railway.app/auth/login",
           { email, password: pass }
@@ -1027,6 +1042,9 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
     }
   }
 
+  const titles: Record<typeof mode, string> = { login: "Welcome back", signup: "Create account", forgot: "Reset password" };
+  const subs: Record<typeof mode, string> = { login: "Sign in to your workspace.", signup: "Set up your EverydayAI account.", forgot: "Enter your email and we'll send a reset link." };
+
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -1038,32 +1056,42 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
         </div>
         <div className="auth-body">
           <div className="auth-prompt">$ session --{mode}</div>
-          <div className="auth-title">{mode === "login" ? "Welcome back" : "Create account"}</div>
-          <div className="auth-sub">{mode === "login" ? "Sign in to your workspace." : "Set up your EverydayAI account."}</div>
+          <div className="auth-title">{titles[mode]}</div>
+          <div className="auth-sub">{subs[mode]}</div>
           {err && <div className="error-msg">{err}</div>}
+          {info && <div className="info-msg">{info}</div>}
           <form onSubmit={submit}>
             <div className="field">
               <label>Email</label>
               <input className="input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
-            <div className="field">
-              <label>Password</label>
-              <input className="input" type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} required />
-            </div>
+            {mode !== "forgot" && (
+              <div className="field">
+                <label>Password</label>
+                <input className="input" type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} required />
+              </div>
+            )}
+            {mode === "login" && (
+              <div style={{ textAlign: "right", marginTop: -10, marginBottom: 16 }}>
+                <a className="auth-link-sm" onClick={() => switchMode("forgot")}>Forgot password?</a>
+              </div>
+            )}
             <button type="submit" className="btn btn-primary" disabled={loading}>
               <span className="btn-inner">
                 {loading && <BtnSpinner />}
                 {loading
-                  ? mode === "login" ? "Signing in..." : "Creating account..."
-                  : mode === "login" ? "Sign in" : "Create account"}
+                  ? mode === "login" ? "Signing in..." : mode === "signup" ? "Creating account..." : "Sending..."
+                  : mode === "login" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
               </span>
             </button>
           </form>
           <div className="auth-switch">
             {mode === "login" ? (
-              <>No account? <a onClick={() => { setMode("signup"); setErr(""); }}>Register</a></>
+              <>No account? <a onClick={() => switchMode("signup")}>Register</a></>
+            ) : mode === "signup" ? (
+              <>Already have an account? <a onClick={() => switchMode("login")}>Sign in</a></>
             ) : (
-              <>Already have an account? <a onClick={() => { setMode("login"); setErr(""); }}>Sign in</a></>
+              <><a onClick={() => switchMode("login")}>← Back to sign in</a></>
             )}
           </div>
         </div>
@@ -1234,7 +1262,7 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
     fetch("https://everydayai-backend-production.up.railway.app/agents/", {
       headers: { Authorization: "Bearer " + token },
       signal: controller.signal,
-    }).then(r => r.json()).then(data => {
+    }).then(r => r.json()).then(async data => {
       const raw: any[] = Array.isArray(data) ? data : (data.agents || []);
       setAgents(raw);
       if (raw.length > 0) {
@@ -1242,6 +1270,9 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
         setPrompt(raw[0].system_prompt || "");
         setModel(raw[0].model || "gpt-4o-mini");
         setMsgs([{ role: "agent", text: "[" + raw[0].name + "] loaded. Configure it on the left, then test it here." }]);
+        const kb = await loadKbFromBackend(String(raw[0].id)).catch(() => "");
+        setKnowledge(kb);
+        setKbStatus("saved");
       }
     }).catch(err => { if (err.name !== "AbortError") console.error(err); })
       .finally(() => setLoadingAgents(false));
@@ -1250,25 +1281,69 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
 
+  const API = "https://everydayai-backend-production.up.railway.app";
+
+  const loadKbFromBackend = async (agentId: string): Promise<string> => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/agents/${agentId}/files`, {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!res.ok) return "";
+      const files: any[] = await res.json().then(d => Array.isArray(d) ? d : d.files || []);
+      const kb = files.find((f: any) => (f.name || f.filename || "").includes("knowledge_base"));
+      if (!kb) return "";
+      if (kb.content) return kb.content;
+      if (kb.url) {
+        const r = await fetch(kb.url, { headers: { Authorization: "Bearer " + token } });
+        return await r.text();
+      }
+      return "";
+    } catch { return ""; }
+  };
+
+  const saveKbToBackend = async (agentId: string, content: string) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    const blob = new Blob([content], { type: "text/plain" });
+    formData.append("file", blob, "knowledge_base.txt");
+    const res = await fetch(`${API}/agents/${agentId}/files`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: formData,
+    });
+    if (!res.ok) throw new Error("KB save failed");
+  };
+
   const handleKnowledgeChange = (val: string) => {
     setKnowledge(val);
     setKbStatus("unsaved");
     if (kbTimerRef.current) clearTimeout(kbTimerRef.current);
-    kbTimerRef.current = setTimeout(() => {
+    if (!agent) return;
+    kbTimerRef.current = setTimeout(async () => {
       setKbStatus("saving");
-      setTimeout(() => setKbStatus("saved"), 600);
+      try {
+        await saveKbToBackend(String(agent.id), val);
+        setKbStatus("saved");
+      } catch {
+        setKbStatus("unsaved");
+      }
     }, 1200);
   };
 
   React.useEffect(() => () => { if (kbTimerRef.current) clearTimeout(kbTimerRef.current); }, []);
 
-  const selectAgent = (id: string) => {
+  const selectAgent = async (id: string) => {
     const a = agents.find((x: any) => String(x.id) === id);
     if (a) {
       setAgent(a);
       setPrompt(a.system_prompt || "");
       setModel(a.model || "gpt-4o-mini");
       setMsgs([{ role: "agent", text: "[" + a.name + "] loaded. Test it in the chat." }]);
+      setKbStatus("saving");
+      const kb = await loadKbFromBackend(String(a.id));
+      setKnowledge(kb);
+      setKbStatus("saved");
     }
   };
 
@@ -1292,29 +1367,27 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
     }
   };
 
-  const simulateResponse = (userMsg: string) => {
-    const words = userMsg.toLowerCase().split(/\s+/);
-    if (knowledge.trim()) {
-      const lines = knowledge.split("\n").filter(l => l.trim());
-      const hit = lines.find(l => words.some(w => w.length > 3 && l.toLowerCase().includes(w)));
-      if (hit) return `Based on my knowledge base: "${hit.trim()}" — anything else?`;
-      return `I have ${lines.length} knowledge entries but couldn't find a direct match. Could you be more specific?`;
-    }
-    if (prompt.trim()) {
-      return `[Acting as: "${prompt.slice(0, 80)}${prompt.length > 80 ? "…" : ""}"] — Simulated preview response.`;
-    }
-    return `Got your message. Add a system prompt under the Prompt tab to define my behavior.`;
-  };
-
   const send = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !agent) return;
     const m = input.trim();
     setInput("");
     setMsgs(p => [...p, { role: "user", text: m }]);
     setTyping(true);
-    await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
-    setTyping(false);
-    setMsgs(p => [...p, { role: "agent", text: simulateResponse(m) }]);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/agents/${agent.id}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ message: m }),
+      });
+      const data = await res.json();
+      const reply = data?.response || data?.message || data?.reply || data?.content || data?.answer || (typeof data === "string" ? data : "No response received.");
+      setMsgs(p => [...p, { role: "agent", text: reply }]);
+    } catch {
+      setMsgs(p => [...p, { role: "agent", text: "Error: could not reach the agent. Check your backend connection." }]);
+    } finally {
+      setTyping(false);
+    }
   };
 
   const addTool = () => {
@@ -1327,7 +1400,7 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 
   const TABS = ["// prompt", "// knowledge", "// tools", "// deploy"];
 
-  const kbStatusLabel = kbStatus === "saved" ? "// stored locally" : kbStatus === "saving" ? "// saving locally..." : "// unsaved changes";
+  const kbStatusLabel = kbStatus === "saved" ? "// saved to cloud" : kbStatus === "saving" ? "// saving..." : "// unsaved changes";
 
   return (
     <div className="studio-split">
@@ -1620,7 +1693,7 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
   }
 
   const widgetSnippet = widgetToken
-    ? `<!-- EverydayAI Widget -->\n<script>\n  window.EverydayAIConfig = {\n    token: "${widgetToken}",\n    position: "bottom-right",\n    theme: "dark"\n  };\n</script>\n<script src="https://cdn.everydayai.app/widget.js" async></script>`
+    ? `<!-- EverydayAI Widget -->\n<script>\n  window.EverydayAIConfig = {\n    token: "${widgetToken}",\n    position: "bottom-right",\n    theme: "dark"\n  };\n</script>\n<script src="https://everydayai-backend-production.up.railway.app/widget.js" async></script>`
     : null;
 
   const SOCIALS: { id: SocialPlatform; label: string; icon: string; color: string; helpText: string; btnLabel: string }[] = [
