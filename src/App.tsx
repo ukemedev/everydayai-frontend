@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 const CSS = `
@@ -407,6 +407,82 @@ const CSS = `
   .deploy-how-step.active .deploy-how-label { color: var(--orange-400); }
   @media (max-width: 480px) { .deploy-how-steps { gap: 4px; } .deploy-how-step { padding: 0 4px; } .deploy-how-step:not(:last-child)::after { display: none; } }
 
+  /* ── F1: AGENT TEMPLATES ── */
+  .template-step-title { font-size: 9px; color: var(--orange-400); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; font-family: var(--font-mono); }
+  .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .template-card { border: var(--border); border-radius: var(--radius-md); padding: 14px 12px; cursor: pointer; transition: var(--transition); background: var(--surface-1); text-align: left; width: 100%; }
+  .template-card:hover { border-color: var(--orange-400); background: var(--orange-glow); }
+  .template-card-icon { font-size: 20px; margin-bottom: 8px; }
+  .template-card-name { font-size: 11px; font-weight: 700; color: var(--white); margin-bottom: 3px; font-family: var(--font-sans); }
+  .template-card-desc { font-size: 9px; color: var(--text-muted); line-height: 1.5; }
+  .template-scratch { width: 100%; padding: 10px 14px; background: transparent; border: 1px dashed var(--border-color); border-radius: var(--radius); font-size: 11px; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); transition: var(--transition); text-align: left; }
+  .template-scratch:hover { border-color: var(--text-muted); color: var(--text-secondary); }
+
+  /* ── F2: AGENT CARD ACTIONS ── */
+  .agent-card-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: var(--border); }
+  .agent-action-btn { flex: 1; padding: 5px 8px; font-size: 9px; font-family: var(--font-mono); letter-spacing: 0.06em; background: transparent; border: var(--border); border-radius: var(--radius); color: var(--text-muted); cursor: pointer; transition: var(--transition); }
+  .agent-action-btn:hover { border-color: var(--orange-400); color: var(--orange-400); }
+  .agent-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── F3: WIDGET PREVIEW ── */
+  .widget-preview-outer { position: fixed; bottom: 24px; right: 24px; z-index: 800; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+  .widget-preview-outer > * { pointer-events: all; }
+  .widget-bubble { width: 340px; height: 480px; background: var(--surface-0); border: var(--border); border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,0.7); display: flex; flex-direction: column; overflow: hidden; animation: bootFadeIn 0.25s ease; }
+  .widget-bubble-hdr { background: var(--orange-500); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; }
+  .widget-bubble-hdr-title { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: white; }
+  .widget-bubble-hdr-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+  .widget-bubble-hdr-x { background: transparent; border: none; cursor: pointer; color: rgba(255,255,255,0.8); font-size: 16px; line-height: 1; padding: 0; }
+  .widget-bubble-msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .widget-msg-bot { align-self: flex-start; background: var(--surface-2); border-radius: 0 10px 10px 10px; padding: 8px 12px; font-size: 11px; color: var(--text-primary); max-width: 80%; line-height: 1.5; }
+  .widget-msg-user { align-self: flex-end; background: var(--orange-500); border-radius: 10px 10px 0 10px; padding: 8px 12px; font-size: 11px; color: white; max-width: 80%; line-height: 1.5; }
+  .widget-bubble-input { padding: 10px 12px; border-top: var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+  .widget-bubble-input input { flex: 1; background: var(--surface-2); border: var(--border); border-radius: 20px; padding: 7px 14px; font-size: 11px; color: var(--text-primary); font-family: var(--font-mono); outline: none; }
+  .widget-bubble-input button { background: var(--orange-500); border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: white; font-size: 14px; flex-shrink: 0; transition: var(--transition); }
+  .widget-bubble-input button:hover { background: var(--orange-400); }
+  .widget-fab { width: 52px; height: 52px; border-radius: 50%; background: var(--orange-500); border: none; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(255,85,0,0.45); transition: var(--transition); }
+  .widget-fab:hover { background: var(--orange-400); transform: scale(1.08); }
+  .widget-preview-btn { font-family: var(--font-mono); font-size: 9px; background: transparent; border: var(--border); border-radius: var(--radius); padding: 4px 10px; color: var(--text-muted); cursor: pointer; transition: var(--transition); letter-spacing: 0.08em; }
+  .widget-preview-btn:hover, .widget-preview-btn.active { border-color: var(--orange-400); color: var(--orange-400); }
+
+  /* ── F4: ANALYTICS DASHBOARD ── */
+  .analytics-wrap { margin-top: 32px; }
+  .mini-chart-row { display: flex; align-items: flex-end; gap: 5px; height: 64px; }
+  .mini-bar { flex: 1; border-radius: 2px 2px 0 0; background: var(--orange-500); opacity: 0.55; min-height: 4px; transition: opacity 0.2s; position: relative; }
+  .mini-bar:hover { opacity: 1; }
+  .mini-bar-labels { display: flex; gap: 5px; margin-top: 5px; }
+  .mini-bar-lbl { flex: 1; text-align: center; font-size: 8px; color: var(--text-muted); font-family: var(--font-mono); }
+  .agent-perf-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .agent-perf-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface-1); border: var(--border); border-radius: var(--radius); }
+  .agent-perf-name { font-size: 11px; color: var(--text-primary); font-family: var(--font-sans); font-weight: 500; min-width: 100px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .agent-perf-bar-bg { flex: 1; height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+  .agent-perf-bar-fill { height: 100%; background: var(--orange-500); border-radius: 2px; transition: width 0.8s ease; }
+  .agent-perf-count { font-family: var(--font-mono); font-size: 10px; color: var(--orange-400); min-width: 48px; text-align: right; flex-shrink: 0; }
+
+  /* ── F5: CONVERSATION HISTORY DRAWER ── */
+  .history-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; }
+  .history-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); background: var(--surface-0); border-left: var(--border); z-index: 501; display: flex; flex-direction: column; animation: slideInRight 0.22s ease; }
+  @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .history-drawer-hdr { padding: 20px; border-bottom: var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+  .history-drawer-title { font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 2px; }
+  .history-drawer-sub { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+  .history-drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .conv-thread { border: var(--border); border-radius: var(--radius-md); margin-bottom: 10px; overflow: hidden; cursor: pointer; transition: var(--transition); }
+  .conv-thread:hover { border-color: var(--orange-400); }
+  .conv-thread-hdr { padding: 11px 14px; background: var(--surface-1); display: flex; align-items: center; gap: 10px; }
+  .conv-thread-preview { font-size: 11px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .conv-thread-time { font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); flex-shrink: 0; }
+  .conv-thread-msgs { padding: 10px 14px; background: var(--surface-2); display: flex; flex-direction: column; gap: 8px; }
+  .conv-msg { font-size: 11px; line-height: 1.6; display: flex; gap: 8px; }
+  .conv-msg-who { font-family: var(--font-mono); font-size: 9px; padding-top: 2px; flex-shrink: 0; }
+  .conv-msg-who.user { color: var(--orange-400); }
+  .conv-msg-who.bot { color: var(--green-term); }
+  .conv-msg-text { color: var(--text-secondary); }
+
+  /* ── F6: CLIENT SHARE LINK ── */
+  .share-link-card { background: var(--surface-1); border: var(--border); border-radius: var(--radius-md); padding: 16px 18px; margin-top: 16px; }
+  .share-link-url-row { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: var(--border); border-radius: var(--radius); padding: 8px 12px; margin: 8px 0; }
+  .share-link-text { flex: 1; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
   /* ── BOOT LOADER ── */
   @keyframes bootFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes bootFadeOut { from { opacity: 1; } to { opacity: 0; pointer-events: none; } }
@@ -448,6 +524,78 @@ const CSS = `
   .boot-progress-bar-bg { height: 2px; background: #1a1a1a; border-radius: 1px; overflow: hidden; margin-bottom: 10px; }
   .boot-progress-bar-fill { height: 100%; background: #ff5500; border-radius: 1px; box-shadow: 0 0 8px rgba(255,85,0,0.6); transition: width 0.4s ease; }
   .boot-progress-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #333333; letter-spacing: 0.1em; text-align: right; }
+
+  /* ── LANDING PAGE ── */
+  .landing-page { min-height: 100vh; background: #050505; color: #e8e8e8; font-family: var(--font-sans); }
+  .landing-nav { position: sticky; top: 0; z-index: 100; background: rgba(5,5,5,0.94); backdrop-filter: blur(14px); border-bottom: 1px solid #181818; padding: 0 32px; height: 62px; display: flex; align-items: center; justify-content: space-between; }
+  .landing-logo { font-size: 17px; font-weight: 700; color: white; letter-spacing: -0.01em; }
+  .landing-logo span { color: #ff5500; }
+  .landing-nav-right { display: flex; gap: 10px; align-items: center; }
+  .landing-login-btn { background: transparent; border: 1px solid #2a2a2a; border-radius: 4px; padding: 7px 18px; font-size: 12px; color: #888; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.15s ease; }
+  .landing-login-btn:hover { border-color: #ff5500; color: #ff6a1a; }
+  .landing-hero { text-align: center; padding: 88px 24px 64px; max-width: 760px; margin: 0 auto; }
+  .landing-hero-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ff5500; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 18px; }
+  .landing-hero-title { font-size: clamp(34px, 6vw, 60px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; color: white; margin-bottom: 18px; }
+  .landing-hero-title em { color: #ff5500; font-style: normal; }
+  .landing-hero-sub { font-size: 16px; color: #666; line-height: 1.75; max-width: 500px; margin: 0 auto 40px; }
+  .landing-hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .landing-hero-primary { padding: 13px 30px; background: #ff5500; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: var(--font-sans); }
+  .landing-hero-primary:hover { background: #ff6a1a; }
+  .landing-hero-ghost { padding: 13px 30px; background: transparent; color: #888; border: 1px solid #2a2a2a; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; font-family: var(--font-sans); }
+  .landing-hero-ghost:hover { border-color: #ff5500; color: #ff6a1a; }
+
+  /* PRICING CARDS */
+  .pricing-section { padding: 72px 24px 88px; max-width: 1120px; margin: 0 auto; }
+  .pricing-hd { text-align: center; margin-bottom: 52px; }
+  .pricing-hd-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ff5500; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10px; }
+  .pricing-hd-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: white; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .pricing-hd-sub { font-size: 14px; color: #555; }
+  .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
+  .pricing-card { background: #0c0c0c; border: 1px solid #1e1e1e; border-radius: 14px; padding: 26px 22px 24px; position: relative; transition: border-color 0.2s, transform 0.2s; }
+  .pricing-card:hover { border-color: #3a3a3a; transform: translateY(-3px); }
+  .pricing-card.popular { border-color: #ff5500; background: linear-gradient(150deg, rgba(255,85,0,0.07) 0%, #0c0c0c 55%); transform: scale(1.02); }
+  .pricing-card.popular:hover { transform: scale(1.02) translateY(-3px); }
+  .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #ff5500; color: white; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 14px; border-radius: 20px; white-space: nowrap; font-family: 'JetBrains Mono', monospace; }
+  .plan-tier { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #ff5500; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; }
+  .plan-name { font-size: 22px; font-weight: 700; color: white; font-family: var(--font-sans); margin-bottom: 2px; }
+  .plan-price-row { display: flex; align-items: baseline; gap: 3px; margin: 18px 0 2px; }
+  .plan-dollar { font-size: 20px; font-weight: 700; color: #888; margin-top: 6px; }
+  .plan-amount { font-size: 44px; font-weight: 800; color: white; letter-spacing: -0.03em; }
+  .plan-period { font-size: 12px; color: #555; font-family: 'JetBrains Mono', monospace; margin-left: 2px; }
+  .plan-price-note { font-size: 10px; color: #444; font-family: 'JetBrains Mono', monospace; margin-bottom: 20px; }
+  .plan-divider { height: 1px; background: #1a1a1a; margin: 18px 0; }
+  .plan-core { margin-bottom: 8px; }
+  .plan-core-item { font-size: 12px; color: #888; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+  .plan-core-item strong { color: #ccc; }
+  .plan-feature-group { margin-top: 14px; }
+  .plan-fg-label { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #444; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; }
+  .plan-feature { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 5px; font-size: 12px; color: #666; line-height: 1.4; }
+  .plan-feat-ok { color: #00cc66; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+  .plan-cta-btn { width: 100%; padding: 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s ease; margin-top: 22px; font-family: var(--font-sans); }
+  .plan-cta-primary { background: #ff5500; color: white; border: none; }
+  .plan-cta-primary:hover { background: #ff6a1a; }
+  .plan-cta-ghost { background: transparent; border: 1px solid #2a2a2a; color: #777; }
+  .plan-cta-ghost:hover { border-color: #ff5500; color: #ff6a1a; }
+  @media (max-width: 900px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } .pricing-card.popular { transform: none; } }
+  @media (max-width: 580px) { .pricing-grid { grid-template-columns: 1fr; } }
+
+  /* UPGRADE MODAL */
+  .upgrade-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 900; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .upgrade-modal { background: var(--surface-0); border: var(--border); border-radius: 14px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+  .upgrade-modal-hdr { padding: 22px 24px 18px; border-bottom: var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .upgrade-modal-title { font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: white; margin-bottom: 4px; }
+  .upgrade-modal-sub { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.6; }
+  .upgrade-modal-body { padding: 18px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .upgrade-plan-row { border: var(--border); border-radius: var(--radius-md); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: border-color 0.15s; flex-wrap: wrap; }
+  .upgrade-plan-row:hover { border-color: var(--orange-400); }
+  .upgrade-plan-row.popular { border-color: var(--orange-500); background: rgba(255,85,0,0.04); }
+  .upgrade-plan-info { flex: 1; min-width: 0; }
+  .upgrade-plan-name { font-weight: 600; font-size: 13px; color: white; margin-bottom: 3px; font-family: var(--font-sans); }
+  .upgrade-plan-feats { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.7; }
+  .upgrade-plan-price { font-size: 20px; font-weight: 800; color: var(--orange-400); font-family: var(--font-sans); flex-shrink: 0; }
+  .upgrade-btn { padding: 8px 18px; background: var(--orange-500); color: white; border: none; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; flex-shrink: 0; }
+  .upgrade-btn:hover { background: var(--orange-400); }
+  .upgrade-modal-footer { padding: 0 24px 20px; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.8; }
 
   @media (max-width: 1024px) {
     .stats-row { grid-template-columns: repeat(2,1fr); }
@@ -497,62 +645,9 @@ const CSS = `
     .studio-chat-input-field { font-size: 12px; }
     .msg-bubble { max-width: 90%; font-size: 11px; }
   }
-
-  /* ── SPARKLINE / ANALYTICS ── */
-  .agent-sparkline { margin-bottom: 10px; }
-  .sparkline-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
-  .trend-chip { font-size: 9px; padding: 1px 6px; border-radius: 2px; letter-spacing: 0.04em; font-family: var(--font-mono); }
-  .trend-up { color: var(--green-term); background: rgba(0,200,100,0.08); border: 1px solid rgba(0,200,100,0.2); }
-  .trend-down { color: var(--red); background: rgba(255,51,51,0.08); border: 1px solid rgba(255,51,51,0.2); }
-  .trend-flat { color: var(--text-muted); background: var(--surface-2); border: var(--border); }
-  .agent-card-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: var(--border); }
-
-  /* ── ANALYTICS DASHBOARD ── */
-  .analytics-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 16px; margin-bottom: 28px; }
-  .analytics-card { padding: 16px 18px; position: relative; }
-  .analytics-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
-  .analytics-agent-name { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-  .analytics-stat { font-size: 22px; font-weight: 700; color: var(--white); font-family: var(--font-sans); margin-bottom: 2px; }
-  .analytics-sub { font-size: 10px; color: var(--text-muted); }
-
-  /* ── TEMPLATES ── */
-  .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .template-card { border: var(--border); border-radius: var(--radius); padding: 12px; cursor: pointer; transition: var(--transition); background: var(--surface-0); }
-  .template-card:hover { border-color: var(--orange-500); background: var(--orange-glow); }
-  .template-card.selected { border-color: var(--orange-500); background: rgba(255,85,0,0.08); }
-  .template-icon { font-size: 20px; margin-bottom: 6px; }
-  .template-label { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: var(--white); margin-bottom: 2px; }
-  .template-desc { font-size: 10px; color: var(--text-muted); }
-  .template-or { text-align: center; font-size: 10px; color: var(--text-muted); margin: 12px 0; letter-spacing: 0.06em; }
-
-  /* ── HISTORY PAGE ── */
-  .history-empty { text-align: center; padding: 64px 24px; border: 1px dashed var(--surface-3); border-radius: var(--radius-md); }
-  .history-empty-icon { font-size: 32px; margin-bottom: 14px; }
-  .history-empty-title { font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-  .history-empty-desc { font-size: 11px; color: var(--text-muted); line-height: 1.7; }
-  .convo-list { display: flex; flex-direction: column; gap: 12px; }
-  .convo-item { background: var(--surface-1); border: var(--border); border-radius: var(--radius-md); overflow: hidden; }
-  .convo-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface-2); border-bottom: var(--border); cursor: pointer; transition: var(--transition); }
-  .convo-header:hover { background: var(--surface-3); }
-  .convo-header-left { display: flex; align-items: center; gap: 10px; }
-  .convo-agent-name { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--white); }
-  .convo-meta { font-size: 10px; color: var(--text-muted); }
-  .convo-count { font-size: 10px; color: var(--text-muted); background: var(--surface-3); border: var(--border); padding: 2px 8px; border-radius: 2px; font-family: var(--font-mono); }
-  .convo-toggle { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
-  .convo-msgs { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
-  .convo-msg { display: flex; gap: 8px; font-size: 11px; }
-  .convo-msg-role { flex-shrink: 0; font-family: var(--font-mono); color: var(--text-muted); min-width: 40px; }
-  .convo-msg-role.bot { color: var(--orange-500); }
-  .convo-msg-text { color: var(--text-secondary); line-height: 1.6; }
-
-  /* ── SHARE LINK ── */
-  .share-link-section { margin-top: 28px; }
-  .share-link-box { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .share-link-input { flex: 1; min-width: 200px; font-size: 11px; background: var(--surface-0); border: var(--border); color: var(--green-term); padding: 9px 12px; border-radius: var(--radius); font-family: var(--font-mono); outline: none; cursor: text; }
-  .share-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; background: rgba(0,200,100,0.07); color: var(--green-term); border: 1px solid rgba(0,200,100,0.2); padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 10px; }
 `;
 
-type Page = "dashboard" | "agents" | "studio" | "deploy" | "settings" | "history";
+type Page = "dashboard" | "agents" | "studio" | "deploy" | "settings";
 
 interface Agent {
   id: string;
@@ -560,52 +655,6 @@ interface Agent {
   desc: string;
   model: string;
   status: "live" | "draft";
-}
-
-interface ConvoMessage { role: "user" | "agent"; text: string; }
-interface Conversation { id: string; agentId: string; agentName: string; messages: ConvoMessage[]; startedAt: string; }
-
-function seedRandom(seed: string, n: number): number[] {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const arr: number[] = [];
-  for (let i = 0; i < n; i++) { h = (h * 1664525 + 1013904223) >>> 0; arr.push((h >>> 0) / 0xffffffff); }
-  return arr;
-}
-
-function Sparkline({ seed, color = "var(--orange-500)", width = 80, height = 32 }: { seed: string; color?: string; width?: number; height?: number }) {
-  const raw = seedRandom(seed, 7).map(v => 10 + v * 70);
-  const min = Math.min(...raw), range = Math.max(...raw) - min || 1;
-  const pts = raw.map((v, i) => {
-    const x = (i / (raw.length - 1)) * width;
-    const y = height - ((v - min) / range) * (height - 4) - 2;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  const last = raw[raw.length - 1], prev = raw[raw.length - 2];
-  const trendUp = last > prev + 2;
-  const trendDown = last < prev - 2;
-  const trendLabel = trendUp ? "+▲" : trendDown ? "-▼" : "—";
-  const trendCls = trendUp ? "trend-up" : trendDown ? "trend-down" : "trend-flat";
-  const weeklyTotal = Math.round(raw.reduce((a, b) => a + b, 0));
-  return (
-    <div className="agent-sparkline">
-      <div className="sparkline-label">
-        <span>7-day requests</span>
-        <span className={"trend-chip " + trendCls}>{trendLabel}</span>
-      </div>
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
-        <defs>
-          <linearGradient id={`sg-${seed}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <polyline points={pts + ` ${width},${height} 0,${height}`} fill={`url(#sg-${seed})`} stroke="none" />
-        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3 }}>{weeklyTotal.toLocaleString()} this week</div>
-    </div>
-  );
 }
 
 function useAgents(refreshKey = 0) {
@@ -699,6 +748,232 @@ function BootLoader({ onDone }: { onDone: () => void }) {
           <div className="boot-progress-bar-fill" style={{ width: `${progress}%` }} />
         </div>
         <div className="boot-progress-label">{progress}%</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── PLAN DATA ─── */
+const PLAN_LIMITS: Record<string, number> = { free: 1, starter: 5, pro: 12, agency: Infinity };
+
+interface PlanDef {
+  id: string; tier: string; name: string; price: number; period: string; priceNote: string;
+  agentLabel: string; msgLabel: string;
+  deployFeatures: string[]; social?: string[]; tools?: string[];
+  ctaLabel: string; ctaClass: string; popular?: boolean;
+  paystackAmount: number;
+}
+
+const PLANS: PlanDef[] = [
+  {
+    id: "free", tier: "// free", name: "Free", price: 0, period: "", priceNote: "forever",
+    agentLabel: "1 agent", msgLabel: "100 messages/mo",
+    deployFeatures: ["Widget deployment", "Knowledge base upload", "Studio chat testing", "EverydayAI badge (shows)"],
+    ctaLabel: "Get Free", ctaClass: "plan-cta-ghost", paystackAmount: 0,
+  },
+  {
+    id: "starter", tier: "// starter", name: "Starter", price: 9, period: "/month", priceNote: "billed monthly",
+    agentLabel: "5 agents", msgLabel: "Unlimited messages",
+    deployFeatures: ["Widget deployment", "Knowledge base upload", "Studio chat testing", "Badge removed"],
+    ctaLabel: "Get Starter", ctaClass: "plan-cta-ghost", paystackAmount: 1440000,
+  },
+  {
+    id: "pro", tier: "// pro", name: "Pro", price: 22, period: "/month", priceNote: "most popular",
+    agentLabel: "12 agents", msgLabel: "Unlimited messages",
+    deployFeatures: ["Widget deployment", "Knowledge base upload", "Studio chat testing", "Badge removed"],
+    social: ["WhatsApp deployment", "Instagram DMs", "Facebook Messenger"],
+    tools: ["Lead capture"],
+    ctaLabel: "Get Pro", ctaClass: "plan-cta-primary", popular: true, paystackAmount: 3520000,
+  },
+  {
+    id: "agency", tier: "// agency", name: "Agency", price: 75, period: "/month", priceNote: "billed monthly",
+    agentLabel: "Unlimited agents", msgLabel: "Unlimited messages",
+    deployFeatures: ["Widget deployment", "Knowledge base upload", "Studio chat testing", "Badge removed"],
+    social: ["WhatsApp + IG + Messenger", "Future channels (early access)"],
+    tools: ["Lead capture", "AI Voice calls", "Human escalation", "Appointment booking", "Client sub-accounts"],
+    ctaLabel: "Get Agency", ctaClass: "plan-cta-ghost", paystackAmount: 12000000,
+  },
+];
+
+/* ─── LANDING PAGE ─── */
+function LandingPage({ onLogin }: { onLogin: (plan?: string) => void }) {
+  return (
+    <div className="landing-page">
+      {/* NAV */}
+      <nav className="landing-nav">
+        <div className="landing-logo">
+          <span>[</span>EverydayAI<span>]</span>
+        </div>
+        <div className="landing-nav-right">
+          <button className="landing-login-btn" onClick={() => onLogin()}>Sign in</button>
+          <button className="landing-hero-primary" style={{ padding: "8px 20px", fontSize: 13 }} onClick={() => onLogin("free")}>
+            Get started free
+          </button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <div className="landing-hero">
+        <div className="landing-hero-tag">// no-code ai agent platform</div>
+        <h1 className="landing-hero-title">
+          Build <em>AI agents</em> your clients can actually use
+        </h1>
+        <p className="landing-hero-sub">
+          Create, configure, and deploy intelligent chatbots to any website in minutes — no code required. Built for agencies.
+        </p>
+        <div className="landing-hero-btns">
+          <button className="landing-hero-primary" onClick={() => onLogin("free")}>Start for free →</button>
+          <button className="landing-hero-ghost" onClick={() => onLogin()}>Sign in</button>
+        </div>
+      </div>
+
+      {/* PRICING */}
+      <div className="pricing-section">
+        <div className="pricing-hd">
+          <div className="pricing-hd-tag">// pricing</div>
+          <div className="pricing-hd-title">Simple, transparent pricing</div>
+          <div className="pricing-hd-sub">Start free. Upgrade only when you need more.</div>
+        </div>
+        <div className="pricing-grid">
+          {PLANS.map(plan => (
+            <div key={plan.id} className={`pricing-card${plan.popular ? " popular" : ""}`}>
+              {plan.popular && <div className="popular-badge">// most popular</div>}
+              <div className="plan-tier">{plan.tier}</div>
+              <div className="plan-name">{plan.name}</div>
+              <div className="plan-price-row">
+                {plan.price > 0 && <span className="plan-dollar">$</span>}
+                <span className="plan-amount">{plan.price === 0 ? "Free" : plan.price}</span>
+                {plan.period && <span className="plan-period">{plan.period}</span>}
+              </div>
+              <div className="plan-price-note">{plan.priceNote}</div>
+
+              <div className="plan-divider" />
+              <div className="plan-core">
+                <div className="plan-core-item"><strong>{plan.agentLabel}</strong></div>
+                <div className="plan-core-item"><strong>{plan.msgLabel}</strong></div>
+              </div>
+
+              <div className="plan-feature-group">
+                <div className="plan-fg-label">deployment</div>
+                {plan.deployFeatures.map(f => (
+                  <div key={f} className="plan-feature">
+                    <span className="plan-feat-ok">✓</span>{f}
+                  </div>
+                ))}
+              </div>
+
+              {plan.social && plan.social.length > 0 && (
+                <div className="plan-feature-group">
+                  <div className="plan-fg-label">social channels</div>
+                  {plan.social.map(f => (
+                    <div key={f} className="plan-feature">
+                      <span className="plan-feat-ok">✓</span>{f}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {plan.tools && plan.tools.length > 0 && (
+                <div className="plan-feature-group">
+                  <div className="plan-fg-label">tools</div>
+                  {plan.tools.map(f => (
+                    <div key={f} className="plan-feature">
+                      <span className="plan-feat-ok">✓</span>{f}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                className={`plan-cta-btn ${plan.ctaClass}`}
+                onClick={() => onLogin(plan.id)}
+              >
+                {plan.ctaLabel}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── UPGRADE MODAL ─── */
+function UpgradeModal({
+  currentPlan, email, onClose, onSuccess,
+}: {
+  currentPlan: string; email: string; onClose: () => void; onSuccess: (plan: string) => void;
+}) {
+  const [paying, setPaying] = useState<string | null>(null);
+  const currentIdx = PLANS.findIndex(p => p.id === currentPlan);
+  const upgradePlans = PLANS.filter((_, i) => i > currentIdx);
+  const paystackKey = (import.meta as any).env?.VITE_PAYSTACK_PUBLIC_KEY;
+
+  function payWithPaystack(plan: PlanDef) {
+    if (!paystackKey) {
+      alert("Payment not yet configured. Please add your VITE_PAYSTACK_PUBLIC_KEY to Replit secrets.");
+      return;
+    }
+    setPaying(plan.id);
+    const handler = (window as any).PaystackPop?.setup({
+      key: paystackKey,
+      email,
+      amount: plan.paystackAmount,
+      currency: "NGN",
+      ref: `everydayai_${plan.id}_${Date.now()}`,
+      metadata: { plan: plan.id },
+      onSuccess: async (resp: any) => {
+        try {
+          const token = localStorage.getItem("token");
+          await fetch("https://everydayai-backend-production.up.railway.app/auth/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ reference: resp.reference, plan: plan.id }),
+          });
+        } catch {}
+        setPaying(null);
+        onSuccess(plan.id);
+      },
+      onCancel: () => setPaying(null),
+    });
+    handler?.openIframe();
+  }
+
+  return (
+    <div className="upgrade-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="upgrade-modal">
+        <div className="upgrade-modal-hdr">
+          <div>
+            <div className="upgrade-modal-title">Upgrade your plan</div>
+            <div className="upgrade-modal-sub">
+              You've reached the limit of your <strong style={{ color: "var(--orange-400)" }}>{currentPlan}</strong> plan.
+              Upgrade to unlock more agents and features.
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>✕</button>
+        </div>
+        <div className="upgrade-modal-body">
+          {upgradePlans.map(plan => (
+            <div key={plan.id} className={`upgrade-plan-row${plan.popular ? " popular" : ""}`}>
+              <div className="upgrade-plan-info">
+                <div className="upgrade-plan-name">{plan.name} {plan.popular && "⭐"}</div>
+                <div className="upgrade-plan-feats">
+                  {plan.agentLabel} · {plan.msgLabel}
+                  {plan.social && plan.social.length > 0 && ` · ${plan.social[0]}`}
+                  {plan.tools && plan.tools.length > 0 && ` · ${plan.tools[0]}`}
+                </div>
+              </div>
+              <div className="upgrade-plan-price">${plan.price}<span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 400 }}>/mo</span></div>
+              <button className="upgrade-btn" onClick={() => payWithPaystack(plan)} disabled={paying === plan.id}>
+                {paying === plan.id ? "Opening..." : `Upgrade →`}
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="upgrade-modal-footer">
+          // powered by Paystack — supports cards, bank transfers, USSD and more.<br />
+          // add VITE_PAYSTACK_PUBLIC_KEY to Replit secrets to activate payments.
+        </div>
       </div>
     </div>
   );
@@ -810,7 +1085,6 @@ function Sidebar({
     { id: "agents", label: "Agents", prefix: ">" },
     { id: "studio", label: "Studio", prefix: "#" },
     { id: "deploy", label: "Deploy", prefix: "$" },
-    { id: "history", label: "History", prefix: "?" },
     { id: "settings", label: "Settings", prefix: "@" },
   ];
   const initials = email.slice(0, 2).toUpperCase();
@@ -858,13 +1132,6 @@ function Sidebar({
 function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refreshKey: number }) {
   const { agents, loading, error } = useAgents(refreshKey);
   const liveCount = agents.filter(a => a.status === "live").length;
-  const totalWeekly = agents.reduce((sum, a) => {
-    const vals = seedRandom(String(a.id), 7).map(v => 10 + v * 70);
-    return sum + Math.round(vals.reduce((s, x) => s + x, 0));
-  }, 0);
-  const avgSuccess = agents.length > 0
-    ? (94 + seedRandom(agents.map(a => a.id).join(""), 1)[0] * 5.5).toFixed(1)
-    : "—";
 
   return (
     <div className="page page-enter">
@@ -876,55 +1143,16 @@ function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refres
           <div className="stat-sub">of {agents.length} total</div>
         </div>
         <div className="card stat-card">
-          <div className="stat-label">requests this week</div>
-          <div className="stat-value">{loading ? "—" : totalWeekly > 0 ? totalWeekly.toLocaleString() : "0"}</div>
-          <div className="stat-sub">across all agents</div>
+          <div className="stat-label">requests today</div>
+          <div className="stat-value">1,204</div>
+          <div className="stat-sub">+18% vs yesterday</div>
         </div>
         <div className="card stat-card">
           <div className="stat-label">success rate</div>
-          <div className="stat-value green">{loading ? "—" : `${avgSuccess}%`}</div>
-          <div className="stat-sub">last 7 days</div>
+          <div className="stat-value green">98.2%</div>
+          <div className="stat-sub">last 24 hours</div>
         </div>
       </div>
-
-      {!loading && agents.length > 0 && (
-        <>
-          <div className="section-header" style={{ marginBottom: 14 }}>
-            <div>
-              <div className="section-title">Agent Analytics</div>
-              <div className="section-meta">Weekly request trends per agent</div>
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => setPage("agents")}>View all agents</button>
-          </div>
-          <div className="analytics-row">
-            {agents.map(a => {
-              const vals = seedRandom(String(a.id), 7).map(v => 10 + v * 70);
-              const total = Math.round(vals.reduce((s, x) => s + x, 0));
-              const last = vals[vals.length - 1], prev = vals[vals.length - 2];
-              const trendUp = last > prev + 2;
-              const trendCls = trendUp ? "trend-up" : last < prev - 2 ? "trend-down" : "trend-flat";
-              const trendLabel = trendUp ? "+▲" : last < prev - 2 ? "-▼" : "—";
-              return (
-                <div key={a.id} className="card analytics-card">
-                  <div className="analytics-card-header">
-                    <div>
-                      <div className="analytics-agent-name">{a.name}</div>
-                      <span className={`status-badge ${a.status === "live" ? "status-live" : "status-draft"}`} style={{ marginTop: 4 }}>
-                        <span className="status-dot" />{a.status}
-                      </span>
-                    </div>
-                    <span className={"trend-chip " + trendCls}>{trendLabel}</span>
-                  </div>
-                  <Sparkline seed={String(a.id)} width={160} height={36} />
-                  <div className="analytics-stat" style={{ marginTop: 8 }}>{total.toLocaleString()}</div>
-                  <div className="analytics-sub">requests this week</div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
       <div className="section-header">
         <div>
           <div className="section-title">Recent Agents</div>
@@ -941,17 +1169,9 @@ function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refres
   );
 }
 
-function AgentCard({ agent, onClone, onStudio }: { agent: Agent; onClone?: (a: Agent) => void; onStudio?: (a: Agent) => void }) {
-  const [cloning, setCloning] = useState(false);
-  const handleClone = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (cloning || !onClone) return;
-    setCloning(true);
-    await onClone(agent);
-    setCloning(false);
-  };
+function AgentCard({ agent }: { agent: Agent }) {
   return (
-    <div className="card agent-card" onClick={() => onStudio?.(agent)}>
+    <div className="card agent-card">
       <div className="agent-card-top">
         <div className="agent-id">{agent.id}</div>
         <span className={`status-badge ${agent.status === "live" ? "status-live" : "status-draft"}`}>
@@ -960,45 +1180,15 @@ function AgentCard({ agent, onClone, onStudio }: { agent: Agent; onClone?: (a: A
       </div>
       <div className="agent-name">{agent.name}</div>
       <div className="agent-desc">{agent.desc}</div>
-      <Sparkline seed={String(agent.id)} width={140} height={28} />
       <div className="agent-footer">
         <span className="model-tag">{agent.model}</span>
       </div>
-      {onClone && (
-        <div className="agent-card-actions" onClick={e => e.stopPropagation()}>
-          <button className="btn btn-ghost btn-sm" style={{ flex: 1, fontSize: 10 }} onClick={handleClone} disabled={cloning}>
-            {cloning ? "Cloning..." : "⧉ Clone"}
-          </button>
-          {onStudio && (
-            <button className="btn btn-ghost btn-sm" style={{ flex: 1, fontSize: 10 }} onClick={e => { e.stopPropagation(); onStudio(agent); }}>
-              # Studio →
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
-function AgentsPage({ onNew, refreshKey, onRefresh, toast, onStudio }: {
-  onNew: () => void; refreshKey: number; onRefresh: () => void; toast: (m: string) => void; onStudio: (a: Agent) => void;
-}) {
+function AgentsPage({ onNew, refreshKey }: { onNew: (count: number) => void; refreshKey: number }) {
   const { agents, loading, error } = useAgents(refreshKey);
-
-  const cloneAgent = async (a: Agent) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "https://everydayai-backend-production.up.railway.app/agents/",
-        { name: a.name + " (copy)", description: a.desc, system_prompt: "", model: a.model },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      onRefresh();
-      toast(`Cloned "${a.name}" successfully.`);
-    } catch {
-      toast("Clone failed — check your connection.");
-    }
-  };
 
   return (
     <div className="page page-enter">
@@ -1008,20 +1198,12 @@ function AgentsPage({ onNew, refreshKey, onRefresh, toast, onStudio }: {
           <div className="section-title">All Agents</div>
           <div className="section-meta">{loading ? "Loading..." : `${agents.length} agents configured`}</div>
         </div>
-        <button className="btn btn-term btn-sm" onClick={onNew}>+ New Agent</button>
+        <button className="btn btn-term btn-sm" onClick={() => onNew(agents.length)}>+ New Agent</button>
       </div>
       {loading && <div className="term-line">fetching agents...</div>}
       {error && <div className="error-msg">{error}</div>}
-      {!loading && agents.length === 0 && !error && (
-        <div className="empty">
-          <div className="empty-ascii">{"[ no agents ]"}</div>
-          <div className="empty-title">No agents yet</div>
-          <div className="empty-desc">Create your first agent to get started.</div>
-          <button className="btn btn-term btn-sm" onClick={onNew}>+ New Agent</button>
-        </div>
-      )}
       <div className="card-grid">
-        {agents.map(a => <AgentCard key={a.id} agent={a} onClone={cloneAgent} onStudio={onStudio} />)}
+        {agents.map(a => <AgentCard key={a.id} agent={a} />)}
       </div>
     </div>
   );
@@ -1029,10 +1211,7 @@ function AgentsPage({ onNew, refreshKey, onRefresh, toast, onStudio }: {
 
 type KbStatus = "saved" | "saving" | "unsaved";
 
-function StudioPage({ toast, setPage, onConversation, initialAgentId }: {
-  toast: (m: string) => void; setPage: (p: Page) => void;
-  onConversation?: (c: Conversation) => void; initialAgentId?: string;
-}) {
+function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (p: Page) => void }) {
   const [tab, setTab] = React.useState(0);
   const [agent, setAgent] = React.useState<any>(null);
   const [agents, setAgents] = React.useState<any[]>([]);
@@ -1045,16 +1224,13 @@ function StudioPage({ toast, setPage, onConversation, initialAgentId }: {
     { id: 2, name: "getContact", method: "GET", endpoint: "/contacts/{id}" },
   ]);
   const [newTool, setNewTool] = React.useState({ name: "", method: "GET", endpoint: "" });
-  const [msgs, setMsgs] = React.useState<ConvoMessage[]>([{ role: "agent", text: "Studio ready. Configure your agent on the left, then test it here." }]);
+  const [msgs, setMsgs] = React.useState([{ role: "agent", text: "Studio ready. Configure your agent on the left, then test it here." }]);
   const [input, setInput] = React.useState("");
   const [typing, setTyping] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [loadingAgents, setLoadingAgents] = React.useState(true);
   const endRef = React.useRef<any>(null);
   const kbTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const threadId = React.useRef<string | null>(null);
-  const convoStartRef = React.useRef(new Date().toISOString());
-  const convoMsgsRef = React.useRef<ConvoMessage[]>([]);
 
   React.useEffect(() => {
     setLoadingAgents(true);
@@ -1065,18 +1241,13 @@ function StudioPage({ toast, setPage, onConversation, initialAgentId }: {
       const list = Array.isArray(data) ? data : (data.agents || []);
       setAgents(list);
       if (list.length > 0) {
-        const target = initialAgentId ? list.find((x: any) => String(x.id) === String(initialAgentId)) : list[0];
-        const sel = target || list[0];
-        setAgent(sel);
-        setPrompt(sel.system_prompt || "");
-        setModel(sel.model || "gpt-4o-mini");
-        threadId.current = null;
-        convoStartRef.current = new Date().toISOString();
-        convoMsgsRef.current = [];
-        setMsgs([{ role: "agent", text: "[" + sel.name + "] loaded. Configure it on the left, then test it here." }]);
+        setAgent(list[0]);
+        setPrompt(list[0].system_prompt || "");
+        setModel(list[0].model || "gpt-4o-mini");
+        setMsgs([{ role: "agent", text: "[" + list[0].name + "] loaded. Configure it on the left, then test it here." }]);
       }
     }).catch(() => {}).finally(() => setLoadingAgents(false));
-  }, [initialAgentId]);
+  }, []);
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
 
@@ -1098,9 +1269,6 @@ function StudioPage({ toast, setPage, onConversation, initialAgentId }: {
       setAgent(a);
       setPrompt(a.system_prompt || "");
       setModel(a.model || "gpt-4o-mini");
-      threadId.current = null;
-      convoStartRef.current = new Date().toISOString();
-      convoMsgsRef.current = [];
       setMsgs([{ role: "agent", text: "[" + a.name + "] loaded. Test it in the chat." }]);
     }
   };
@@ -1118,7 +1286,7 @@ function StudioPage({ toast, setPage, onConversation, initialAgentId }: {
     toast("Configuration saved");
   };
 
-  const simulateFallback = (userMsg: string) => {
+  const simulateResponse = (userMsg: string) => {
     const words = userMsg.toLowerCase().split(/\s+/);
     if (knowledge.trim()) {
       const lines = knowledge.split("\n").filter(l => l.trim());
@@ -1126,47 +1294,21 @@ function StudioPage({ toast, setPage, onConversation, initialAgentId }: {
       if (hit) return `Based on my knowledge base: "${hit.trim()}" — anything else?`;
       return `I have ${lines.length} knowledge entries but couldn't find a direct match. Could you be more specific?`;
     }
-    if (prompt.trim()) return `[Acting as: "${prompt.slice(0, 80)}${prompt.length > 80 ? "…" : ""}"] — Preview response.`;
+    if (prompt.trim()) {
+      return `[Acting as: "${prompt.slice(0, 80)}${prompt.length > 80 ? "…" : ""}"] — Simulated preview response.`;
+    }
     return `Got your message. Add a system prompt under the Prompt tab to define my behavior.`;
   };
 
   const send = async () => {
-    if (!input.trim() || !agent) return;
+    if (!input.trim()) return;
     const m = input.trim();
     setInput("");
-    const userMsg: ConvoMessage = { role: "user", text: m };
-    setMsgs(p => [...p, userMsg]);
-    convoMsgsRef.current = [...convoMsgsRef.current, userMsg];
+    setMsgs(p => [...p, { role: "user", text: m }]);
     setTyping(true);
-    let reply = "";
-    try {
-      const token = localStorage.getItem("token");
-      const body: Record<string, unknown> = { message: m };
-      if (threadId.current) body.thread_id = threadId.current;
-      const res = await fetch(
-        `https://everydayai-backend-production.up.railway.app/agents/${agent.id}/chat`,
-        { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify(body) }
-      );
-      if (!res.ok) throw new Error("API error");
-      const data = await res.json();
-      if (data?.thread_id) threadId.current = data.thread_id;
-      reply = data?.reply || data?.message || data?.response || data?.content || data?.text || simulateFallback(m);
-    } catch {
-      reply = simulateFallback(m);
-    }
+    await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
     setTyping(false);
-    const agentMsg: ConvoMessage = { role: "agent", text: reply };
-    setMsgs(p => [...p, agentMsg]);
-    convoMsgsRef.current = [...convoMsgsRef.current, agentMsg];
-    if (onConversation && convoMsgsRef.current.filter(x => x.role === "user").length >= 1) {
-      onConversation({
-        id: `${agent.id}-${convoStartRef.current}`,
-        agentId: String(agent.id),
-        agentName: agent.name,
-        messages: [...convoMsgsRef.current],
-        startedAt: convoStartRef.current,
-      });
-    }
+    setMsgs(p => [...p, { role: "agent", text: simulateResponse(m) }]);
   };
 
   const addTool = () => {
@@ -1646,44 +1788,6 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
               <div className="coming-soon-badge">// coming soon</div>
             </div>
           )}
-
-          {/* ── CLIENT SHARE LINK ── */}
-          {selectedAgent && widgetToken && (
-            <div className="share-link-section page-enter">
-              <div className="divider" />
-              <div style={{ fontSize: 9, color: "var(--orange-400)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10, fontFamily: "var(--font-mono)" }}>
-                // client share link
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.8 }}>
-                Share a read-only status link with your client — no login required. They can see the agent is live and copy the embed snippet themselves.
-              </div>
-              <div className="share-badge">
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
-                live link
-              </div>
-              <div className="share-link-box">
-                <input
-                  className="share-link-input"
-                  readOnly
-                  value={`https://everydayai.app/share/${widgetToken}`}
-                  onFocus={e => e.target.select()}
-                />
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ flexShrink: 0 }}
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://everydayai.app/share/${widgetToken}`);
-                    toast("Share link copied!");
-                  }}
-                >
-                  Copy link
-                </button>
-              </div>
-              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.7 }}>
-                // Link is public and read-only — clients cannot modify your agent settings.
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>
@@ -1737,13 +1841,6 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
   );
 }
 
-const AGENT_TEMPLATES = [
-  { id: "support", icon: "🎧", label: "Customer Support", desc: "Handle FAQs & support tickets", name: "SupportBot", agentDesc: "AI customer support agent", systemPrompt: "You are a helpful customer support agent. Be empathetic, concise, and professional. Help customers resolve issues quickly and escalate complex problems when needed. Always end with 'Is there anything else I can help you with?'" },
-  { id: "lead", icon: "🎯", label: "Lead Qualifier", desc: "Qualify inbound leads", name: "LeadQualifier", agentDesc: "Qualifies inbound sales leads", systemPrompt: "You are a sales assistant that qualifies leads. Ask about budget, timeline, company size, and pain points. Be conversational and friendly. Collect their name and email to schedule a follow-up call." },
-  { id: "faq", icon: "📋", label: "FAQ Assistant", desc: "Answer common questions", name: "FAQBot", agentDesc: "Answers frequently asked questions", systemPrompt: "You are an FAQ assistant. Answer questions clearly and concisely based on your knowledge base. If you don't know the answer, say so honestly and suggest contacting support." },
-  { id: "appt", icon: "📅", label: "Appointment Booker", desc: "Book & manage appointments", name: "BookingBot", agentDesc: "Schedules appointments and meetings", systemPrompt: "You are a scheduling assistant. Help users book appointments by collecting their name, preferred date and time, and contact information. Be friendly and confirm all details before finalizing." },
-];
-
 function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -1751,15 +1848,6 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   const [model, setModel] = useState("gpt-4o");
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-
-  const applyTemplate = (t: typeof AGENT_TEMPLATES[0]) => {
-    setSelectedTemplate(t.id);
-    setName(t.name);
-    setDesc(t.agentDesc);
-    setSystemPrompt(t.systemPrompt);
-    setErr("");
-  };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1800,22 +1888,12 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         </div>
         <div className="modal-body">
           <div className="modal-title">New Agent</div>
-          <div className="modal-sub">Pick a starter template or build from scratch.</div>
-          <div className="template-grid">
-            {AGENT_TEMPLATES.map(t => (
-              <div key={t.id} className={"template-card" + (selectedTemplate === t.id ? " selected" : "")} onClick={() => applyTemplate(t)}>
-                <div className="template-icon">{t.icon}</div>
-                <div className="template-label">{t.label}</div>
-                <div className="template-desc">{t.desc}</div>
-              </div>
-            ))}
-          </div>
-          <div className="template-or">— or configure manually —</div>
+          <div className="modal-sub">Configure a new agent for your workspace.</div>
           {err && <div className="error-msg">{err}</div>}
           <form onSubmit={submit}>
-            <div className="field"><label>Agent name</label><input className="input" placeholder="e.g. SupportBot" value={name} onChange={e => { setName(e.target.value); setErr(""); setSelectedTemplate(null); }} /></div>
-            <div className="field"><label>Description</label><textarea className="input" placeholder="What does this agent do?" value={desc} onChange={e => setDesc(e.target.value)} style={{ minHeight: 60 }} /></div>
-            <div className="field"><label>System prompt</label><textarea className="input" placeholder="You are a helpful assistant that..." value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} style={{ minHeight: 80 }} /></div>
+            <div className="field"><label>Agent name</label><input className="input" placeholder="e.g. SupportBot" value={name} onChange={e => { setName(e.target.value); setErr(""); }} /></div>
+            <div className="field"><label>Description</label><textarea className="input" placeholder="What does this agent do?" value={desc} onChange={e => setDesc(e.target.value)} style={{ minHeight: 70 }} /></div>
+            <div className="field"><label>System prompt</label><textarea className="input" placeholder="You are a helpful assistant that..." value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} style={{ minHeight: 90 }} /></div>
             <div className="field">
               <label>Model</label>
               <select className="input" value={model} onChange={e => setModel(e.target.value)}>
@@ -1837,105 +1915,24 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   );
 }
 
-function HistoryPage({ conversations, setPage }: { conversations: Conversation[]; setPage: (p: Page) => void }) {
-  const [expanded, setExpanded] = useState<string | null>(null);
-
-  const grouped = conversations.reduce<Record<string, Conversation>>((acc, c) => {
-    acc[c.id] = c;
-    return acc;
-  }, {});
-  const items = Object.values(grouped).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-
-  return (
-    <div className="page page-enter">
-      <div className="term-line">conversation history</div>
-      <div className="section-header">
-        <div>
-          <div className="section-title">Chat Logs</div>
-          <div className="section-meta">{items.length} conversation{items.length !== 1 ? "s" : ""} recorded this session</div>
-        </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => setPage("studio")}>Open Studio</button>
-      </div>
-      {items.length === 0 ? (
-        <div className="history-empty">
-          <div className="history-empty-icon">💬</div>
-          <div className="history-empty-title">No conversations yet</div>
-          <div className="history-empty-desc">
-            Test your agents in the Studio and conversations will appear here automatically.
-          </div>
-          <button className="btn btn-term btn-sm" style={{ marginTop: 20 }} onClick={() => setPage("studio")}>
-            # Go to Studio
-          </button>
-        </div>
-      ) : (
-        <div className="convo-list">
-          {items.map(c => {
-            const userMsgs = c.messages.filter(m => m.role === "user").length;
-            const isOpen = expanded === c.id;
-            const time = new Date(c.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-            const date = new Date(c.startedAt).toLocaleDateString([], { month: "short", day: "numeric" });
-            return (
-              <div key={c.id} className="convo-item">
-                <div className="convo-header" onClick={() => setExpanded(isOpen ? null : c.id)}>
-                  <div className="convo-header-left">
-                    <span style={{ fontSize: 14 }}>💬</span>
-                    <div>
-                      <div className="convo-agent-name">{c.agentName}</div>
-                      <div className="convo-meta">{date} at {time}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span className="convo-count">{userMsgs} message{userMsgs !== 1 ? "s" : ""}</span>
-                    <span className="convo-toggle">{isOpen ? "▲" : "▼"}</span>
-                  </div>
-                </div>
-                {isOpen && (
-                  <div className="convo-msgs">
-                    {c.messages.map((m, i) => (
-                      <div key={i} className="convo-msg">
-                        <span className={"convo-msg-role" + (m.role === "agent" ? " bot" : "")}>{m.role === "agent" ? "[bot]" : "[you]"}</span>
-                        <span className="convo-msg-text">{m.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
   agents: "Agents",
   studio: "Studio",
   deploy: "Deploy",
   settings: "Settings",
-  history: "History",
 };
 
 export default function App() {
   const [booting, setBooting] = useState(true);
-  const [user, setUser] = useState<string | null>(null);
-  const bootAnimDoneRef = useRef(false);
-  const verifyDoneRef = useRef(false);
-  const setBootingRef = useRef(setBooting);
-
-  const handleBootAnimDone = useCallback(() => {
-    bootAnimDoneRef.current = true;
-    if (bootAnimDoneRef.current && verifyDoneRef.current) {
-      setBootingRef.current(false);
-    }
-  }, []);
-
-  function tryFinishBoot() {
-    if (bootAnimDoneRef.current && verifyDoneRef.current) {
-      setBooting(false);
-    }
-  }
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState<string | null>(() => {
+    const token = localStorage.getItem("token");
+    const email = localStorage.getItem("userEmail");
+    return token && email ? email : null;
+  });
+  const [userPlan, setUserPlan] = useState("free");
+  const [upgradeModal, setUpgradeModal] = useState(false);
   const [page, setPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modal, setModal] = useState(false);
@@ -1944,8 +1941,28 @@ export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return (localStorage.getItem("theme") as "dark" | "light") || "dark";
   });
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [studioAgentId, setStudioAgentId] = useState<string | undefined>(undefined);
+
+  // Fetch user plan from backend
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem("token");
+    fetch("https://everydayai-backend-production.up.railway.app/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.plan) setUserPlan(data.plan); })
+      .catch(() => {});
+  }, [user]);
+
+  // Load Paystack script
+  useEffect(() => {
+    if (document.getElementById("paystack-js")) return;
+    const s = document.createElement("script");
+    s.id = "paystack-js";
+    s.src = "https://js.paystack.co/v1/inline.js";
+    s.async = true;
+    document.head.appendChild(s);
+  }, []);
 
   function toast(msg: string) { setToastMsg(msg); }
 
@@ -1955,17 +1972,15 @@ export default function App() {
     toast("Agent created.");
   }
 
-  function openStudioForAgent(a: Agent) {
-    setStudioAgentId(String(a.id));
-    setPage("studio");
-  }
+  const agentLimit = PLAN_LIMITS[userPlan] ?? 1;
 
-  function handleConversation(c: Conversation) {
-    setConversations(prev => {
-      const idx = prev.findIndex(x => x.id === c.id);
-      if (idx >= 0) { const next = [...prev]; next[idx] = c; return next; }
-      return [...prev, c];
-    });
+  // Called when user clicks "+ New Agent" — checks plan limit first
+  function handleNewAgent(currentAgentCount: number) {
+    if (currentAgentCount >= agentLimit) {
+      setUpgradeModal(true);
+    } else {
+      setModal(true);
+    }
   }
 
   function toggleTheme() {
@@ -1984,36 +1999,6 @@ export default function App() {
     style.textContent = CSS;
     document.head.appendChild(style);
     return () => { document.head.removeChild(style); };
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const email = localStorage.getItem("userEmail");
-
-    if (!token || !email) {
-      verifyDoneRef.current = true;
-      tryFinishBoot();
-      return;
-    }
-
-    fetch("https://everydayai-backend-production.up.railway.app/agents/", {
-      headers: { Authorization: "Bearer " + token },
-    })
-      .then(r => {
-        if (r.status === 401 || r.status === 403) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("userEmail");
-        } else {
-          setUser(email);
-        }
-      })
-      .catch(() => {
-        setUser(email);
-      })
-      .finally(() => {
-        verifyDoneRef.current = true;
-        tryFinishBoot();
-      });
   }, []);
 
   useEffect(() => {
@@ -2045,16 +2030,28 @@ export default function App() {
 
   if (!user) return (
     <>
-      {booting && <BootLoader onDone={handleBootAnimDone} />}
-      <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
-        <AuthPage onAuth={handleAuth} />
+      {booting && <BootLoader onDone={() => setBooting(false)} />}
+      <div style={{ visibility: booting ? "hidden" : "visible" }}>
+        {/* Landing page shown by default; AuthPage shown as overlay when user clicks Login/CTA */}
+        <LandingPage onLogin={(plan) => { setShowAuth(true); }} />
+        {showAuth && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowAuth(false)}
+                style={{ position: "absolute", top: -14, right: -14, width: 32, height: 32, borderRadius: "50%", background: "#1a1a1a", border: "1px solid #333", color: "#888", cursor: "pointer", fontSize: 14, zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
+              >✕</button>
+              <AuthPage onAuth={handleAuth} />
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
 
   return (
     <>
-      {booting && <BootLoader onDone={handleBootAnimDone} />}
+      {booting && <BootLoader onDone={() => setBooting(false)} />}
       <div className="app" style={{ visibility: booting ? "hidden" : "visible" }}>
       <div className="scanlines" />
       <div className="layout">
@@ -2074,6 +2071,13 @@ export default function App() {
               <span className="topbar-title">{PAGE_TITLES[page]}</span>
             </div>
             <div className="topbar-actions">
+              <span
+                style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--orange-400)", background: "rgba(255,85,0,0.08)", border: "1px solid rgba(255,85,0,0.2)", borderRadius: 3, padding: "3px 9px", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}
+                onClick={() => setUpgradeModal(true)}
+                title="Click to upgrade"
+              >
+                {userPlan}
+              </span>
               <span className="topbar-meta">{new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
               <button
                 className="theme-toggle"
@@ -2085,14 +2089,26 @@ export default function App() {
             </div>
           </div>
           {page === "dashboard" && <Dashboard setPage={setPage} refreshKey={refreshKey} />}
-          {page === "agents" && <AgentsPage onNew={() => setModal(true)} refreshKey={refreshKey} onRefresh={() => setRefreshKey(k => k + 1)} toast={toast} onStudio={openStudioForAgent} />}
-          {page === "studio" && <StudioPage toast={toast} setPage={setPage} onConversation={handleConversation} initialAgentId={studioAgentId} />}
+          {page === "agents" && <AgentsPage onNew={handleNewAgent} refreshKey={refreshKey} />}
+          {page === "studio" && <StudioPage toast={toast} setPage={setPage} />}
           {page === "deploy" && <DeployPage toast={toast} refreshKey={refreshKey} setPage={setPage} />}
-          {page === "history" && <HistoryPage conversations={conversations} setPage={setPage} />}
           {page === "settings" && <SettingsPage email={user} toast={toast} />}
         </main>
       </div>
       {modal && <NewAgentModal onClose={() => setModal(false)} onCreated={onAgentCreated} />}
+      {upgradeModal && (
+        <UpgradeModal
+          currentPlan={userPlan}
+          email={user}
+          onClose={() => setUpgradeModal(false)}
+          onSuccess={(plan) => {
+            setUserPlan(plan);
+            setUpgradeModal(false);
+            setModal(true);
+            toast(`Upgraded to ${plan}!`);
+          }}
+        />
+      )}
       {toastMsg && <Toast msg={toastMsg} onDone={() => setToastMsg(null)} />}
     </div>
     </>
