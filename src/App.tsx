@@ -2099,6 +2099,12 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
 
   const saveKey = async () => {
     if (!apiKey.trim() || keyStatus === "saving") return;
+    const trimmed = apiKey.trim();
+    if (!trimmed.startsWith("sk-") || trimmed.length < 20) {
+      setKeyStatus("error");
+      setKeyMsg("Invalid key format. OpenAI keys start with 'sk-' and are at least 20 characters.");
+      return;
+    }
     setKeyStatus("saving");
     setKeyMsg("");
     const controller = new AbortController();
@@ -2108,7 +2114,7 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
       const res = await fetch("https://everydayai-backend-production.up.railway.app/auth/api-key", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ openai_api_key: apiKey }),
+        body: JSON.stringify({ openai_api_key: trimmed }),
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -2126,7 +2132,6 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
       } else {
         setKeyStatus("success");
         setKeyMsg("API key saved successfully.");
-        setApiKey("");
       }
     } catch (e: any) {
       clearTimeout(timer);
