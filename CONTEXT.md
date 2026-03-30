@@ -35,8 +35,14 @@ artifacts/web-app/src/App.tsx in Replit
 POST /auth/register
 POST /auth/login  
 PUT  /auth/api-key
+GET /auth/me                   — returns { plan: "free"|"starter"|"pro"|"agency" }
+POST /auth/verify-payment      — body: { reference, plan }, returns { plan }
 GET/POST/PUT/DELETE /agents/
 POST /agents/{id}/publish
 POST/GET/DELETE /agents/{id}/files
 POST /agents/{id}/chat
 POST /widget/{token}/chat
+
+## Billing endpoints (needed for subscription flow)
+POST /billing/initialize       — body: { plan, email, callback_url }, returns { authorization_url, reference }
+POST /billing/webhook          — Paystack webhook receiver (charge.success, subscription.disable, invoice.payment_failed)

@@ -894,37 +894,30 @@ function UpgradeModal({
   const [payError, setPayError] = useState<string | null>(null);
   const currentIdx = PLANS.findIndex(p => p.id === currentPlan);
   const upgradePlans = PLANS.filter((_, i) => i > currentIdx);
-  const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined;
 
-  function payWithPaystack(plan: PlanDef) {
+  async function payWithPaystack(plan: PlanDef) {
     setPayError(null);
-    if (!paystackKey) {
-      setPayError("Payment is not yet configured for this environment. Please contact support to upgrade your plan.");
-      return;
-    }
     setPaying(plan.id);
-    const handler = (window as any).PaystackPop?.setup({
-      key: paystackKey,
-      email,
-      amount: plan.paystackAmount,
-      currency: "NGN",
-      ref: `everydayai_${plan.id}_${Date.now()}`,
-      metadata: { plan: plan.id },
-      onSuccess: async (resp: any) => {
-        try {
-          const token = localStorage.getItem("token");
-          await fetch("https://everydayai-backend-production.up.railway.app/auth/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ reference: resp.reference, plan: plan.id }),
-          });
-        } catch {}
-        setPaying(null);
-        onSuccess(plan.id);
-      },
-      onCancel: () => setPaying(null),
-    });
-    handler?.openIframe();
+    try {
+      const token = localStorage.getItem("token");
+      const callbackUrl = `${window.location.origin}/?plan=${plan.id}`;
+      const res = await fetch("https://everydayai-backend-production.up.railway.app/billing/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ plan: plan.id, email, callback_url: callbackUrl }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.message || "Failed to initialize payment.");
+      }
+      const data = await res.json();
+      if (!data.authorization_url) throw new Error("No payment URL returned from server.");
+      window.location.href = data.authorization_url;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to start payment. Please try again.";
+      setPayError(msg);
+      setPaying(null);
+    }
   }
 
   return (
@@ -975,7 +968,7 @@ function UpgradeModal({
                 <button className="upgrade-btn" onClick={() => payWithPaystack(plan)} disabled={paying === plan.id}>
                   <span className="btn-inner">
                     {paying === plan.id && <BtnSpinner />}
-                    {paying === plan.id ? "Opening..." : plan.ctaLabel}
+                    {paying === plan.id ? "Redirecting..." : plan.ctaLabel}
                   </span>
                 </button>
               </div>
@@ -2061,7 +2054,9 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
   );
 }
 
-function SettingsPage({ email, toast }: { email: string; toast: (m: string) => void }) {
+function SettingsPage({ email, toast, plan, onUpgrade }: {
+  email: string; toast: (m: string) => void; plan: string; onUpgrade: () => void;
+}) {
   const [apiKey, setApiKey] = useState("");
   const [saved, setSaved] = useState(false);
 
@@ -2071,6 +2066,10 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
     toast("API key saved.");
     setTimeout(() => setSaved(false), 3000);
   };
+
+  const currentPlan = PLANS.find(p => p.id === plan) || PLANS[0];
+  const agentLimit = PLAN_LIMITS[plan] ?? 1;
+  const isAgency = plan === "agency";
 
   return (
     <div className="page page-enter settings-wrap">
@@ -2082,6 +2081,43 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
         <div className="field">
           <label>Email</label>
           <input className="input" value={email} disabled />
+        </div>
+      </div>
+
+      <div className="divider" />
+
+      <div className="settings-block">
+        <div className="settings-block-title">Billing & Plan</div>
+        <div className="settings-block-desc">Manage your subscription and usage limits.</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,85,0,0.06)", border: "1px solid rgba(255,85,0,0.18)", borderRadius: 6, padding: "14px 16px" }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--orange-400)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
+                {currentPlan.tier}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+                {currentPlan.name}
+                {currentPlan.price > 0 && (
+                  <span style={{ fontWeight: 400, fontSize: 12, color: "var(--text-muted)", marginLeft: 6 }}>
+                    ${currentPlan.price}/mo
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
+                {isAgency ? "Unlimited agents" : `Up to ${agentLimit} agent${agentLimit > 1 ? "s" : ""}`} · {currentPlan.msgLabel}
+              </div>
+            </div>
+            {plan !== "agency" && (
+              <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={onUpgrade}>
+                Upgrade plan
+              </button>
+            )}
+          </div>
+          {plan !== "agency" && (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+              // upgrade unlocks more agents, social channels, and advanced tools.
+            </div>
+          )}
         </div>
       </div>
 
@@ -2188,6 +2224,87 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   );
 }
 
+/* ─── PAYMENT CALLBACK HANDLER ─── */
+function PaymentCallback({ reference, plan, onDone }: {
+  reference: string; plan: string | null; onDone: (plan: string) => void;
+}) {
+  const [status, setStatus] = useState<"verifying" | "success" | "failed">("verifying");
+  const [confirmedPlan, setConfirmedPlan] = useState<string | null>(plan);
+
+  useEffect(() => {
+    async function verify() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("https://everydayai-backend-production.up.railway.app/auth/verify-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ reference, plan }),
+        });
+        if (!res.ok) throw new Error("Verification failed");
+        const data = await res.json();
+        const resolved = data.plan || plan || "starter";
+        setConfirmedPlan(resolved);
+        setStatus("success");
+        window.history.replaceState({}, "", window.location.pathname);
+        setTimeout(() => onDone(resolved), 2200);
+      } catch {
+        setStatus("failed");
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+    verify();
+  }, []);
+
+  return (
+    <div className="overlay" style={{ zIndex: 9999 }}>
+      <div className="modal">
+        <div className="modal-bar">
+          <span className="modal-bar-title">payment-verification.log</span>
+        </div>
+        <div className="modal-body" style={{ padding: "36px 24px", textAlign: "center" }}>
+          {status === "verifying" && (
+            <>
+              <div className="gs-ring" style={{ margin: "0 auto 18px" }} />
+              <div className="modal-title">Verifying payment...</div>
+              <div className="modal-sub">Please wait while we confirm your transaction.</div>
+            </>
+          )}
+          {status === "success" && (
+            <>
+              <div style={{ fontSize: 36, marginBottom: 14, color: "var(--orange-400)" }}>✓</div>
+              <div className="modal-title">Payment confirmed!</div>
+              <div className="modal-sub">
+                Your plan has been upgraded to{" "}
+                <strong style={{ color: "var(--orange-400)" }}>{confirmedPlan}</strong>.{" "}
+                Taking you back...
+              </div>
+            </>
+          )}
+          {status === "failed" && (
+            <>
+              <div style={{ fontSize: 36, marginBottom: 14, color: "#ff4444" }}>✕</div>
+              <div className="modal-title">Verification failed</div>
+              <div className="modal-sub" style={{ marginBottom: 8 }}>
+                We could not verify your payment automatically. Please contact support with this reference:
+              </div>
+              <code style={{ fontSize: 11, background: "rgba(255,255,255,0.05)", padding: "4px 10px", borderRadius: 4, display: "inline-block", marginBottom: 18, wordBreak: "break-all" }}>
+                {reference}
+              </code>
+              <br />
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => onDone("")}
+              >
+                Continue to dashboard
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PAGE_TITLES: Record<Page, string> = {
   dashboard: "Dashboard",
   agents: "Agents",
@@ -2206,6 +2323,16 @@ export default function App() {
   });
   const [userPlan, setUserPlan] = useState("free");
   const [upgradeModal, setUpgradeModal] = useState(false);
+
+  // Detect Paystack redirect-back params on page load
+  const [paymentRef, setPaymentRef] = useState<string | null>(() => {
+    const p = new URLSearchParams(window.location.search);
+    return p.get("reference") || p.get("trxref") || null;
+  });
+  const [paymentCallbackPlan, setPaymentCallbackPlan] = useState<string | null>(() => {
+    const p = new URLSearchParams(window.location.search);
+    return p.get("plan") || null;
+  });
   const [page, setPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modal, setModal] = useState(false);
@@ -2227,15 +2354,6 @@ export default function App() {
       .catch(() => {});
   }, [user]);
 
-  // Load Paystack script
-  useEffect(() => {
-    if (document.getElementById("paystack-js")) return;
-    const s = document.createElement("script");
-    s.id = "paystack-js";
-    s.src = "https://js.paystack.co/v1/inline.js";
-    s.async = true;
-    document.head.appendChild(s);
-  }, []);
 
   function toast(msg: string) { setToastMsg(msg); }
 
@@ -2353,7 +2471,7 @@ export default function App() {
           {page === "agents" && <AgentsPage onNew={handleNewAgent} refreshKey={refreshKey} />}
           {page === "studio" && <StudioPage toast={toast} setPage={setPage} />}
           {page === "deploy" && <DeployPage toast={toast} refreshKey={refreshKey} setPage={setPage} />}
-          {page === "settings" && <SettingsPage email={user} toast={toast} />}
+          {page === "settings" && <SettingsPage email={user} toast={toast} plan={userPlan} onUpgrade={() => setUpgradeModal(true)} />}
         </main>
       </div>
       {modal && <NewAgentModal onClose={() => setModal(false)} onCreated={onAgentCreated} />}
@@ -2367,6 +2485,20 @@ export default function App() {
             setUpgradeModal(false);
             setModal(true);
             toast(`Upgraded to ${plan}!`);
+          }}
+        />
+      )}
+      {paymentRef && (
+        <PaymentCallback
+          reference={paymentRef}
+          plan={paymentCallbackPlan}
+          onDone={(resolvedPlan) => {
+            if (resolvedPlan) {
+              setUserPlan(resolvedPlan);
+              toast(`Plan upgraded to ${resolvedPlan}!`);
+            }
+            setPaymentRef(null);
+            setPaymentCallbackPlan(null);
           }}
         />
       )}

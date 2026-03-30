@@ -8,7 +8,7 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 - **Language**: TypeScript
 - **HTTP Client**: Axios + native fetch
 - **Package Manager**: npm
-- **Payments**: Paystack (inline JS loaded dynamically)
+- **Payments**: Paystack (redirect/subscription flow — no inline JS)
 
 ## Architecture
 - Single-page React application
@@ -38,17 +38,33 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 2. **Not logged in** → `LandingPage` (marketing + pricing) → click any CTA → `AuthPage` modal overlay
 3. **Logged in** → full app with sidebar (dashboard/agents/studio/deploy/settings)
 
+## Paystack Billing Flow (Redirect Method)
+1. User clicks upgrade in `UpgradeModal` or Settings page
+2. Frontend calls `POST /billing/initialize` with `{ plan, email, callback_url }`
+3. Backend creates Paystack transaction/subscription, returns `{ authorization_url, reference }`
+4. Frontend redirects user to `authorization_url` (Paystack hosted page)
+5. After payment, Paystack redirects to `callback_url` (the app URL + `?plan=X&reference=Y&trxref=Y`)
+6. App detects `?reference=` on load → shows `PaymentCallback` overlay
+7. `PaymentCallback` calls `POST /auth/verify-payment` with `{ reference, plan }` to verify + update plan
+8. On success, plan badge updates and user sees confirmation
+
+### Backend endpoints needed for billing (in `everydayai-backend`):
+- `POST /billing/initialize` — Create Paystack transaction. Body: `{ plan, email, callback_url }`. Returns: `{ authorization_url, reference }`
+- `POST /billing/webhook` — Handle Paystack webhook events: `charge.success`, `subscription.disable`, `invoice.payment_failed`. Updates user plan in DB accordingly.
+- Existing `POST /auth/verify-payment` — Already handles verification. Should return `{ plan }` in response.
+
 ## Features Implemented
 1. Boot loader with terminal animation
 2. Landing page with hero + 4 pricing cards (Free/Starter/Pro/Agency)
 3. Auth modal overlay on landing page (close button included)
 4. Plan badge in topbar (clickable to open upgrade modal)
 5. `handleNewAgent` — checks plan limit before allowing agent creation
-6. `UpgradeModal` — shows plans above current, triggers Paystack payment
-7. Paystack script loaded dynamically on app start
+6. `UpgradeModal` — shows plans above current, triggers Paystack redirect flow
+7. `PaymentCallback` — handles Paystack redirect return, verifies payment, updates plan
 8. `/auth/me` fetched on login to hydrate user plan (graceful fallback = free)
-9. Light/dark theme toggle
-10. Mobile responsive (hamburger menu, breakpoints at 480/768/900/1024px)
+9. Billing & Plan section in Settings page — shows current plan, limits, and upgrade CTA
+10. Light/dark theme toggle
+11. Mobile responsive (hamburger menu, breakpoints at 480/768/900/1024px)
 11. Knowledge base saves to backend via `POST /agents/{id}/files` (debounced, 1.2s)
 12. Knowledge base loads from backend on agent select (looks for `knowledge_base.txt`)
 13. Deploy page with destination tabs (Socials/Custom Code/Website)
