@@ -747,9 +747,11 @@ function useAgents(refreshKey = 0) {
         signal: controller.signal,
       })
       .then(res => {
-        const raw: any[] = Array.isArray(res.data) ? res.data : res.data?.agents ?? [];
+        const raw: any[] = Array.isArray(res.data)
+          ? res.data
+          : res.data?.agents ?? res.data?.data ?? res.data?.results ?? [];
         setAgents(raw.map(a => ({
-          id: String(a.id),
+          id: String(a.id ?? a._id ?? ""),
           name: a.name || "Untitled Agent",
           desc: a.description || a.desc || "",
           model: a.model || "gpt-4o-mini",
@@ -757,7 +759,14 @@ function useAgents(refreshKey = 0) {
         })));
       })
       .catch(err => {
-        if (!axios.isCancel(err)) setError("Failed to load agents.");
+        if (!axios.isCancel(err)) {
+          if (axios.isAxiosError(err)) {
+            const d = err.response?.data;
+            setError(d?.detail || d?.message || `Failed to load agents (${err.response?.status ?? "network error"}).`);
+          } else {
+            setError("Failed to load agents. Check your connection.");
+          }
+        }
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -1119,15 +1128,18 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
           { email, password: pass }
         );
         const token = res.data?.access_token || res.data?.token;
-        if (token) localStorage.setItem("token", token);
+        if (!token) throw new Error("No token received from server. Please try again.");
+        localStorage.setItem("token", token);
         onAuth(email);
       });
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
         const d = e.response?.data;
-        setErr(d?.detail || d?.message || (typeof d === "string" ? d : null) || "Something went wrong.");
+        setErr(d?.detail || d?.message || (typeof d === "string" ? d : null) || "Login failed. Please check your credentials.");
+      } else if (e instanceof Error) {
+        setErr(e.message);
       } else {
-        setErr("Something went wrong.");
+        setErr("Something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -1468,29 +1480,43 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
   const [typing, setTyping] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [loadingAgents, setLoadingAgents] = React.useState(true);
+  const [studioErr, setStudioErr] = React.useState<string | null>(null);
   const endRef = React.useRef<any>(null);
   const kbTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     const controller = new AbortController();
     setLoadingAgents(true);
+    setStudioErr(null);
     const token = localStorage.getItem("token");
     fetch("https://everydayai-backend-production.up.railway.app/agents/", {
       headers: { Authorization: "Bearer " + token },
       signal: controller.signal,
-    }).then(r => r.json()).then(async data => {
-      const raw: any[] = Array.isArray(data) ? data : (data.agents || []);
-      setAgents(raw);
-      if (raw.length > 0) {
-        setAgent(raw[0]);
-        setPrompt(raw[0].system_prompt || "");
-        setModel(raw[0].model || "gpt-4o-mini");
-        setMsgs([{ role: "agent", text: "[" + raw[0].name + "] loaded. Configure it on the left, then test it here." }]);
-        const kb = await loadKbFromBackend(String(raw[0].id)).catch(() => "");
-        setKnowledge(kb);
-        setKbStatus("saved");
-      }
-    }).catch(err => { if (err.name !== "AbortError") console.error(err); })
+    })
+      .then(r => {
+        if (!r.ok) throw new Error(`Server error: ${r.status}`);
+        return r.json();
+      })
+      .then(async data => {
+        const raw: any[] = Array.isArray(data)
+          ? data
+          : data.agents ?? data.data ?? data.results ?? [];
+        setAgents(raw);
+        if (raw.length > 0) {
+          setAgent(raw[0]);
+          setPrompt(raw[0].system_prompt || "");
+          setModel(raw[0].model || "gpt-4o-mini");
+          setMsgs([{ role: "agent", text: "[" + raw[0].name + "] loaded. Configure it on the left, then test it here." }]);
+          const kb = await loadKbFromBackend(String(raw[0].id)).catch(() => "");
+          setKnowledge(kb);
+          setKbStatus("saved");
+        }
+      })
+      .catch(err => {
+        if (err.name !== "AbortError") {
+          setStudioErr("Could not load agents. Check your connection and refresh.");
+        }
+      })
       .finally(() => setLoadingAgents(false));
     return () => controller.abort();
   }, []);
@@ -1506,13 +1532,20 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
         headers: { Authorization: "Bearer " + token },
       });
       if (!res.ok) return "";
-      const files: any[] = await res.json().then(d => Array.isArray(d) ? d : d.files || []);
-      const kb = files.find((f: any) => (f.name || f.filename || "").includes("knowledge_base"));
+      const rawData = await res.json();
+      const files: any[] = Array.isArray(rawData)
+        ? rawData
+        : rawData.files ?? rawData.data ?? rawData.results ?? [];
+      // Try to find knowledge_base file first, fall back to first text file
+      const kb =
+        files.find((f: any) => (f.name || f.filename || f.original_name || "").toLowerCase().includes("knowledge_base")) ||
+        files.find((f: any) => (f.name || f.filename || f.original_name || "").toLowerCase().endsWith(".txt"));
       if (!kb) return "";
       if (kb.content) return kb.content;
-      if (kb.url) {
-        const r = await fetch(kb.url, { headers: { Authorization: "Bearer " + token } });
-        return await r.text();
+      const fileUrl = kb.url || kb.file_url || kb.download_url;
+      if (fileUrl) {
+        const r = await fetch(fileUrl, { headers: { Authorization: "Bearer " + token } });
+        if (r.ok) return await r.text();
       }
       return "";
     } catch { return ""; }
@@ -1528,7 +1561,11 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
       headers: { Authorization: "Bearer " + token },
       body: formData,
     });
-    if (!res.ok) throw new Error("KB save failed");
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      const msg = errData?.detail || errData?.message || `Upload failed (${res.status})`;
+      throw new Error(msg);
+    }
   };
 
   const handleKnowledgeChange = (val: string) => {
@@ -1541,8 +1578,11 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
       try {
         await saveKbToBackend(String(agent.id), val);
         setKbStatus("saved");
-      } catch {
+        toast("Knowledge base saved.");
+      } catch (err: unknown) {
         setKbStatus("unsaved");
+        const msg = err instanceof Error ? err.message : "Failed to save knowledge base.";
+        toast(msg);
       }
     }, 1200);
   };
@@ -1627,6 +1667,13 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 
           {loadingAgents ? (
             <div className="studio-no-agent">// loading agents...</div>
+          ) : studioErr ? (
+            <div>
+              <div className="error-msg" style={{ margin: "0 0 12px" }}>{studioErr}</div>
+              <button className="btn btn-ghost btn-sm" style={{ width: "100%" }} onClick={() => window.location.reload()}>
+                ↺ Retry
+              </button>
+            </div>
           ) : agents.length === 0 ? (
             <div className="studio-no-agent">
               <span>No agent selected —</span>
@@ -1943,8 +1990,8 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
         </div>
       )}
 
-      {/* ── NO AGENTS BANNER ── */}
-      {!loading && agents.length === 0 && (
+      {/* ── NO AGENTS BANNER — only when truly empty, not when API failed ── */}
+      {!loading && !error && agents.length === 0 && (
         <div className="deploy-no-agent-banner">
           <div className="deploy-no-agent-banner-text">
             <div className="deploy-no-agent-banner-title">You need an agent first</div>
@@ -1958,7 +2005,12 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
 
       {/* ── AGENT SELECTOR BAR — only when agents exist ── */}
       {loading && <div className="term-line">loading agents...</div>}
-      {error && <div className="error-msg">{error}</div>}
+      {error && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div className="error-msg" style={{ flex: 1, margin: 0 }}>{error}</div>
+          <button className="btn btn-ghost btn-sm" onClick={() => window.location.reload()}>↺ Retry</button>
+        </div>
+      )}
 
       {!loading && agents.length > 0 && (
         <div className="deploy-agent-bar">
