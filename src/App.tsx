@@ -2073,38 +2073,39 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
   email: string; toast: (m: string) => void; plan: string; onUpgrade: () => void;
 }) {
   const [apiKey, setApiKey] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [keyError, setKeyError] = useState("");
-  const [savingKey, setSavingKey] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [keyMsg, setKeyMsg] = useState("");
 
   const saveKey = async () => {
-    if (!apiKey.trim()) return;
-    setSavingKey(true);
-    setSaved(false);
-    setKeyError("");
+    if (!apiKey.trim() || keyStatus === "saving") return;
+    setKeyStatus("saving");
+    setKeyMsg("");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch("https://everydayai-backend-production.up.railway.app/auth/api-key", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ api_key: apiKey }),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const errMsg = data?.detail || data?.message || "Failed to save API key.";
-        setKeyError(errMsg);
-        toast(errMsg);
+        let errMsg = "Failed to save API key.";
+        try { const d = await res.json(); errMsg = d?.detail || d?.message || errMsg; } catch { /* ignore */ }
+        setKeyStatus("error");
+        setKeyMsg(errMsg);
       } else {
-        setSaved(true);
-        toast("API key saved successfully.");
-        setTimeout(() => setSaved(false), 4000);
+        setKeyStatus("success");
+        setKeyMsg("API key saved successfully.");
+        setApiKey("");
       }
-    } catch {
-      const errMsg = "Failed to save API key. Check your connection.";
-      setKeyError(errMsg);
-      toast(errMsg);
-    } finally {
-      setSavingKey(false);
+    } catch (e: any) {
+      clearTimeout(timer);
+      const isTimeout = e?.name === "AbortError";
+      setKeyStatus("error");
+      setKeyMsg(isTimeout ? "Request timed out. Check your connection." : "Failed to save API key. Check your connection.");
     }
   };
 
@@ -2167,12 +2168,36 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
       <div className="settings-block">
         <div className="settings-block-title">OpenAI API Key</div>
         <div className="settings-block-desc">Connect your OpenAI key to power agents in your workspace.</div>
-        {saved && <div className="alert-box alert-ok">// key saved successfully.</div>}
-        {keyError && <div className="alert-box" style={{ borderColor: "var(--red-term, #ff4444)", color: "var(--red-term, #ff4444)", background: "rgba(255,68,68,0.06)", marginBottom: 12 }}>// {keyError}</div>}
+        {keyStatus === "success" && (
+          <div className="alert-box alert-ok" style={{ marginBottom: 12 }}>
+            ✓ {keyMsg}
+          </div>
+        )}
+        {keyStatus === "error" && (
+          <div className="alert-box" style={{ borderColor: "#ff4444", color: "#ff4444", background: "rgba(255,68,68,0.06)", marginBottom: 12 }}>
+            ✗ {keyMsg}
+          </div>
+        )}
         <div className="input-row">
-          <input className="input" type="password" placeholder="sk-..." value={apiKey} onChange={e => { setApiKey(e.target.value); setKeyError(""); }} disabled={savingKey} />
-          <button type="button" className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={saveKey} disabled={savingKey}>
-            <span className="btn-inner">{savingKey && <BtnSpinner />}{savingKey ? "Saving..." : "Save"}</span>
+          <input
+            className="input"
+            type="password"
+            placeholder="sk-..."
+            value={apiKey}
+            onChange={e => { setApiKey(e.target.value); if (keyStatus !== "idle") setKeyStatus("idle"); }}
+            disabled={keyStatus === "saving"}
+          />
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            style={{ flexShrink: 0, minWidth: 80 }}
+            onClick={saveKey}
+            disabled={keyStatus === "saving" || !apiKey.trim()}
+          >
+            <span className="btn-inner">
+              {keyStatus === "saving" && <BtnSpinner />}
+              {keyStatus === "saving" ? "Saving..." : "Save Key"}
+            </span>
           </button>
         </div>
       </div>
