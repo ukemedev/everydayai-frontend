@@ -56,6 +56,8 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 15. Forgot password flow on auth page (calls `POST /auth/forgot-password`)
 16. Studio chat wired to real `POST /agents/{id}/chat` backend endpoint
 17. Widget embed snippet points to backend (`/widget.js`) instead of CDN
+18. Email verification screen shown after signup — prompts user to check inbox before logging in; includes resend button (`POST /auth/resend-verification`)
+19. Google / Gmail Sign-In via Google Identity Services (GIS); sends ID token to `POST /auth/google` on backend; activated when `VITE_GOOGLE_CLIENT_ID` env var is set
 
 ## Backend Endpoints (Remote — Railway)
 - `POST /auth/login` — Login
@@ -73,6 +75,7 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 
 ## Environment Variables Needed
 - `VITE_PAYSTACK_PUBLIC_KEY` — Paystack public key (pk_live_... or pk_test_...) — set in Replit Secrets
+- `VITE_GOOGLE_CLIENT_ID` — Google OAuth 2.0 Client ID for Gmail sign-in (from Google Cloud Console) — set in `.env` or Replit Secrets
 
 ## GitHub
 - Repo: `https://github.com/ukemedev/everydayai-frontend`
