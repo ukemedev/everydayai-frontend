@@ -2114,7 +2114,13 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
       clearTimeout(timer);
       if (!res.ok) {
         let errMsg = "Failed to save API key.";
-        try { const d = await res.json(); errMsg = d?.detail || d?.message || errMsg; } catch { /* ignore */ }
+        try {
+          const d = await res.json();
+          const raw = d?.detail ?? d?.message ?? null;
+          if (typeof raw === "string") errMsg = raw;
+          else if (Array.isArray(raw)) errMsg = raw.map((e: any) => e?.msg || e?.message || String(e)).join(", ");
+          else if (raw && typeof raw === "object") errMsg = raw.msg || raw.message || errMsg;
+        } catch { /* ignore */ }
         setKeyStatus("error");
         setKeyMsg(errMsg);
       } else {
