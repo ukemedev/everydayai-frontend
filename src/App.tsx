@@ -719,18 +719,30 @@ function useAgents(refreshKey = 0) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
     const token = localStorage.getItem("token");
     axios
       .get("https://everydayai-backend-production.up.railway.app/agents/", {
         headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
       })
       .then(res => {
-        setAgents(Array.isArray(res.data) ? res.data : res.data?.agents ?? []);
+        const raw: any[] = Array.isArray(res.data) ? res.data : res.data?.agents ?? [];
+        setAgents(raw.map(a => ({
+          id: String(a.id),
+          name: a.name || "Untitled Agent",
+          desc: a.description || a.desc || "",
+          model: a.model || "gpt-4o-mini",
+          status: a.status || "draft",
+        })));
       })
-      .catch(() => setError("Failed to load agents."))
+      .catch(err => {
+        if (!axios.isCancel(err)) setError("Failed to load agents.");
+      })
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, [refreshKey]);
 
   return { agents, loading, error };
@@ -940,7 +952,10 @@ function UpgradeModal({
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, flexShrink: 0 }}>
                 <div className="upgrade-plan-price">${plan.price}<span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 400 }}>/mo</span></div>
                 <button className="upgrade-btn" onClick={() => payWithPaystack(plan)} disabled={paying === plan.id}>
-                  {paying === plan.id ? "Opening..." : plan.ctaLabel}
+                  <span className="btn-inner">
+                    {paying === plan.id && <BtnSpinner />}
+                    {paying === plan.id ? "Opening..." : plan.ctaLabel}
+                  </span>
                 </button>
               </div>
             </div>
@@ -955,10 +970,12 @@ function UpgradeModal({
 }
 
 function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
   useEffect(() => {
-    const t = setTimeout(onDone, 2800);
+    const t = setTimeout(() => onDoneRef.current(), 2800);
     return () => clearTimeout(t);
-  }, [onDone]);
+  }, []); // runs once on mount only — timer won't reset on re-renders
   return (
     <div className="toast">
       <span className="toast-prefix">&gt;&gt;</span>
@@ -982,16 +999,14 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
     setLoading(true);
     try {
       await run(async () => {
-        const endpoint = mode === "login" ? "/auth/login" : "/auth/signup";
-        await axios.post(
-          `https://everydayai-backend-production.up.railway.app${endpoint}`,
-          { email, password: pass }
-        );
+        // If signing up, register first — then fall through to auto-login
         if (mode === "signup") {
-          setMode("login");
-          setErr("");
-          return;
+          await axios.post(
+            "https://everydayai-backend-production.up.railway.app/auth/signup",
+            { email, password: pass }
+          );
         }
+        // Login (for both login mode and auto-login after signup)
         const res = await axios.post(
           "https://everydayai-backend-production.up.railway.app/auth/login",
           { email, password: pass }
@@ -1038,7 +1053,9 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
             <button type="submit" className="btn btn-primary" disabled={loading}>
               <span className="btn-inner">
                 {loading && <BtnSpinner />}
-                {loading ? "Signing in..." : mode === "login" ? "Sign in" : "Create account"}
+                {loading
+                  ? mode === "login" ? "Signing in..." : "Creating account..."
+                  : mode === "login" ? "Sign in" : "Create account"}
               </span>
             </button>
           </form>
@@ -1200,10 +1217,7 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
   const [model, setModel] = React.useState("gpt-4o-mini");
   const [knowledge, setKnowledge] = React.useState("");
   const [kbStatus, setKbStatus] = React.useState<KbStatus>("saved");
-  const [tools, setTools] = React.useState([
-    { id: 1, name: "createLead", method: "POST", endpoint: "/leads" },
-    { id: 2, name: "getContact", method: "GET", endpoint: "/contacts/{id}" },
-  ]);
+  const [tools, setTools] = React.useState<{ id: number; name: string; method: string; endpoint: string }[]>([]);
   const [newTool, setNewTool] = React.useState({ name: "", method: "GET", endpoint: "" });
   const [msgs, setMsgs] = React.useState([{ role: "agent", text: "Studio ready. Configure your agent on the left, then test it here." }]);
   const [input, setInput] = React.useState("");
@@ -1214,20 +1228,24 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
   const kbTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
+    const controller = new AbortController();
     setLoadingAgents(true);
     const token = localStorage.getItem("token");
     fetch("https://everydayai-backend-production.up.railway.app/agents/", {
-      headers: { Authorization: "Bearer " + token }
+      headers: { Authorization: "Bearer " + token },
+      signal: controller.signal,
     }).then(r => r.json()).then(data => {
-      const list = Array.isArray(data) ? data : (data.agents || []);
-      setAgents(list);
-      if (list.length > 0) {
-        setAgent(list[0]);
-        setPrompt(list[0].system_prompt || "");
-        setModel(list[0].model || "gpt-4o-mini");
-        setMsgs([{ role: "agent", text: "[" + list[0].name + "] loaded. Configure it on the left, then test it here." }]);
+      const raw: any[] = Array.isArray(data) ? data : (data.agents || []);
+      setAgents(raw);
+      if (raw.length > 0) {
+        setAgent(raw[0]);
+        setPrompt(raw[0].system_prompt || "");
+        setModel(raw[0].model || "gpt-4o-mini");
+        setMsgs([{ role: "agent", text: "[" + raw[0].name + "] loaded. Configure it on the left, then test it here." }]);
       }
-    }).catch(() => {}).finally(() => setLoadingAgents(false));
+    }).catch(err => { if (err.name !== "AbortError") console.error(err); })
+      .finally(() => setLoadingAgents(false));
+    return () => controller.abort();
   }, []);
 
   React.useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
@@ -1309,7 +1327,7 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 
   const TABS = ["// prompt", "// knowledge", "// tools", "// deploy"];
 
-  const kbStatusLabel = kbStatus === "saved" ? "// auto-saved" : kbStatus === "saving" ? "// saving..." : "// unsaved changes";
+  const kbStatusLabel = kbStatus === "saved" ? "// stored locally" : kbStatus === "saving" ? "// saving locally..." : "// unsaved changes";
 
   return (
     <div className="studio-split">
@@ -1579,7 +1597,23 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
   }
 
   function copyText(text: string, key: string) {
-    navigator.clipboard.writeText(text);
+    const doFallback = () => {
+      try {
+        const el = document.createElement("textarea");
+        el.value = text;
+        el.style.position = "fixed";
+        el.style.opacity = "0";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      } catch {}
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).catch(doFallback);
+    } else {
+      doFallback();
+    }
     setCopied(key);
     toast("Copied to clipboard!");
     setTimeout(() => setCopied(null), 2000);
@@ -2043,7 +2077,7 @@ export default function App() {
   return (
     <SpinnerProvider>
       {booting && <BootLoader onDone={() => setBooting(false)} />}
-      <div className="app" style={{ visibility: booting ? "hidden" : "visible" }}>
+      <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
       <div className="scanlines" />
       <div className="layout">
         <Sidebar
