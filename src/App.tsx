@@ -2108,7 +2108,7 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
       const res = await fetch("https://everydayai-backend-production.up.railway.app/auth/api-key", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ api_key: apiKey }),
+        body: JSON.stringify({ openai_api_key: apiKey }),
         signal: controller.signal,
       });
       clearTimeout(timer);
