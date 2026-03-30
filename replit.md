@@ -6,56 +6,73 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 ## Tech Stack
 - **Framework**: React 18 + Vite 5
 - **Language**: TypeScript
-- **Routing**: React Router DOM v6
-- **HTTP Client**: Axios
+- **HTTP Client**: Axios + native fetch
 - **Package Manager**: npm
+- **Payments**: Paystack (inline JS loaded dynamically)
 
 ## Architecture
 - Single-page React application
 - Connects to a remote FastAPI backend on Railway: `https://everydayai-backend-production.up.railway.app`
 - Authentication via JWT tokens stored in localStorage
-- All CSS is inline in `src/App.tsx` using CSS-in-JS style injection
+- All CSS is a single template literal constant in `src/App.tsx` injected via useEffect
 
 ## Key Files
-- `src/App.tsx` - Main app component with all CSS, auth, and page routing
-- `src/pages/StudioPage.tsx` - Agent studio page
-- `src/pages/` - All page components
-- `src/components/` - Reusable UI components
-- `vite.config.ts` - Vite configuration (port 5000, host 0.0.0.0)
+- `src/App.tsx` — Everything: CSS, all page components, auth, routing (~2100 lines)
+- `vite.config.ts` — Port 5000, host 0.0.0.0
 
-## Backend Endpoints
-- `POST /auth/register` - Register new user
-- `POST /auth/login` - Login and get JWT token
-- `PUT /auth/api-key` - Update OpenAI API key
-- `GET/POST/PUT/DELETE /agents/` - Agent CRUD
-- `POST /agents/{id}/publish` - Publish an agent
-- `POST/GET/DELETE /agents/{id}/files` - File management
-- `POST /agents/{id}/chat` - Chat with agent
-- `POST /widget/{token}/chat` - Widget chat endpoint
+## Pricing Plans (PLANS constant)
+| Plan    | Price  | Agents   | Paystack (kobo) |
+|---------|--------|----------|-----------------|
+| free    | $0     | 1        | 0               |
+| starter | $9/mo  | 5        | 1,440,000       |
+| pro     | $22/mo | 12       | 3,520,000       |
+| agency  | $75/mo | Unlimited| 12,000,000      |
 
-## Development
-- Run: `npm run dev`
-- Serves on: `http://0.0.0.0:5000`
-- Build: `npm run build` (outputs to `dist/`)
+## Plan Limits (PLAN_LIMITS constant)
+```js
+{ free: 1, starter: 5, pro: 12, agency: Infinity }
+```
 
-## Features
-1. **Agent Analytics Dashboard** — Dashboard shows per-agent sparkline charts (7-day weekly trend, deterministic from agent ID), total weekly requests across all agents, and trend indicators (up/down/flat). Each agent card also displays its own mini sparkline.
-2. **Live Chat Preview in Studio** — Studio chat now calls the real `/agents/{id}/chat` backend API. Falls back to simulated response if API unavailable. Maintains thread_id across messages for proper conversation context.
-3. **Agent Templates / Starter Kits** — New Agent modal shows 4 starter templates (Customer Support, Lead Qualifier, FAQ Assistant, Appointment Booker). Clicking a template pre-fills the name, description, and system prompt.
-4. **Conversation History Viewer** — New "History" page in the sidebar records conversations from Studio chat sessions. Shows agent name, timestamp, message count, and expandable chat log per conversation.
-5. **Client Share Link** — After publishing an agent, the Deploy page generates a read-only share link (`everydayai.app/share/{token}`) that can be copied and sent to clients — no login required.
-6. **Agent Duplication** — Each agent card has a "Clone" button that calls POST /agents/ with the same settings, creating a copy. Refreshes the agent list automatically.
+## Auth & Routing Flow
+1. **Boot loader** — animated terminal sequence (~2.5s)
+2. **Not logged in** → `LandingPage` (marketing + pricing) → click any CTA → `AuthPage` modal overlay
+3. **Logged in** → full app with sidebar (dashboard/agents/studio/deploy/settings)
 
-## Navigation
-- `~` Dashboard — stats, analytics, recent agents
-- `>` Agents — all agents with clone + studio shortcuts
-- `#` Studio — configure + test agents (real API chat)
-- `$` Deploy — publish + embed code + client share link
-- `?` History — conversation logs from Studio
-- `@` Settings — API key, account
+## Features Implemented
+1. Boot loader with terminal animation
+2. Landing page with hero + 4 pricing cards (Free/Starter/Pro/Agency)
+3. Auth modal overlay on landing page (close button included)
+4. Plan badge in topbar (clickable to open upgrade modal)
+5. `handleNewAgent` — checks plan limit before allowing agent creation
+6. `UpgradeModal` — shows plans above current, triggers Paystack payment
+7. Paystack script loaded dynamically on app start
+8. `/auth/me` fetched on login to hydrate user plan (graceful fallback = free)
+9. Light/dark theme toggle
+10. Mobile responsive (hamburger menu, breakpoints at 480/768/900/1024px)
+11. Knowledge base auto-save indicator (debounced)
+12. Deploy page with destination tabs (Socials/Custom Code/Website)
+13. Deploy page step-by-step how-it-works tracker
 
-## Fixes Applied
-1. **Login**: Added `loading` state — button disables, inputs lock, shows "// authenticating..." during request.
-2. **Settings**: Fixed runtime crash — `setErr` was called but only `setSaveErr` exists.
-3. **Studio**: Added `loadingAgents` state and proper error state.
-4. **General**: Added `import React` default import for StudioPage.
+## Backend Endpoints (Remote — Railway)
+- `POST /auth/login` — Login
+- `POST /auth/signup` — Register
+- `GET /auth/me` — Get user info + plan (returns `{ plan: "free"|"starter"|"pro"|"agency" }`)
+- `POST /auth/verify-payment` — Verify Paystack payment, update plan `{ reference, plan }`
+- `GET /agents/` — List agents
+- `POST /agents/` — Create agent
+- `PUT /agents/{id}` — Update agent
+- `POST /agents/{id}/publish` — Publish agent, returns `{ widget_token }`
+
+## Environment Variables Needed
+- `VITE_PAYSTACK_PUBLIC_KEY` — Paystack public key (pk_live_... or pk_test_...) — set in Replit Secrets
+
+## GitHub
+- Repo: `https://github.com/ukemedev/everydayai-frontend`
+- Push: `git push "https://${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/ukemedev/everydayai-frontend.git" HEAD:main`
+- Vercel auto-deploys from GitHub main branch
+
+## Notes
+- Token stored in `localStorage.getItem("token")`
+- User email in `localStorage.getItem("userEmail")`
+- Theme in `localStorage.getItem("theme")`
+- The 401 interceptor clears token and returns user to landing page
