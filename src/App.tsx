@@ -26,6 +26,10 @@ function GlobalSpinner({ visible, fading }: { visible: boolean; fading: boolean 
   );
 }
 
+function BtnSpinner() {
+  return <span className="btn-spinner" aria-hidden="true" />;
+}
+
 function SpinnerProvider({ children }: { children: React.ReactNode }) {
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
@@ -391,6 +395,14 @@ const CSS = `
     text-transform: uppercase;
   }
   .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-spinner {
+    display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: currentColor;
+    animation: gs-spin 0.65s linear infinite;
+    flex-shrink: 0;
+  }
+  .btn-inner { display: inline-flex; align-items: center; gap: 7px; justify-content: center; }
   .settings-wrap { max-width: 540px; }
 
   /* ── STUDIO ── */
@@ -1024,7 +1036,10 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
               <input className="input" type="password" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} required />
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? "..." : mode === "login" ? "Sign in" : "Create account"}
+              <span className="btn-inner">
+                {loading && <BtnSpinner />}
+                {loading ? "Signing in..." : mode === "login" ? "Sign in" : "Create account"}
+              </span>
             </button>
           </form>
           <div className="auth-switch">
@@ -1109,13 +1124,13 @@ function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refres
         </div>
         <div className="card stat-card">
           <div className="stat-label">requests today</div>
-          <div className="stat-value">1,204</div>
-          <div className="stat-sub">+18% vs yesterday</div>
+          <div className="stat-value">—</div>
+          <div className="stat-sub">coming soon</div>
         </div>
         <div className="card stat-card">
           <div className="stat-label">success rate</div>
-          <div className="stat-value green">98.2%</div>
-          <div className="stat-sub">last 24 hours</div>
+          <div className="stat-value">—</div>
+          <div className="stat-sub">coming soon</div>
         </div>
       </div>
       <div className="section-header">
@@ -1352,7 +1367,10 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
                 </select>
               </div>
               <button className="btn btn-primary" onClick={save} disabled={saving || !agent}>
-                {saving ? "// saving..." : "> save config"}
+                <span className="btn-inner">
+                  {saving && <BtnSpinner />}
+                  {saving ? "Saving..." : "> save config"}
+                </span>
               </button>
             </div>
           )}
@@ -1644,7 +1662,10 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
             </div>
           </div>
           <button className="btn btn-term btn-sm" onClick={publish} disabled={publishing || !selectedAgent}>
-            {publishing ? "Publishing..." : selectedAgent?.status === "live" ? "Re-publish" : "Publish Agent"}
+            <span className="btn-inner">
+              {publishing && <BtnSpinner />}
+              {publishing ? "Publishing..." : selectedAgent?.status === "live" ? "Re-publish" : "Publish Agent"}
+            </span>
           </button>
         </div>
       )}
@@ -1884,7 +1905,10 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             <div className="modal-footer">
               <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} disabled={submitting}>Cancel</button>
               <button type="submit" className="btn btn-primary btn-sm" style={{ width: "auto" }} disabled={submitting}>
-                {submitting ? "Creating..." : "Create agent"}
+                <span className="btn-inner">
+                  {submitting && <BtnSpinner />}
+                  {submitting ? "Creating..." : "Create agent"}
+                </span>
               </button>
             </div>
           </form>
