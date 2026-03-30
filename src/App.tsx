@@ -525,60 +525,6 @@ const CSS = `
   .boot-progress-bar-fill { height: 100%; background: #ff5500; border-radius: 1px; box-shadow: 0 0 8px rgba(255,85,0,0.6); transition: width 0.4s ease; }
   .boot-progress-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #333333; letter-spacing: 0.1em; text-align: right; }
 
-  /* ── LANDING PAGE ── */
-  .landing-page { min-height: 100vh; background: #050505; color: #e8e8e8; font-family: var(--font-sans); }
-  .landing-nav { position: sticky; top: 0; z-index: 100; background: rgba(5,5,5,0.94); backdrop-filter: blur(14px); border-bottom: 1px solid #181818; padding: 0 32px; height: 62px; display: flex; align-items: center; justify-content: space-between; }
-  .landing-logo { font-size: 17px; font-weight: 700; color: white; letter-spacing: -0.01em; }
-  .landing-logo span { color: #ff5500; }
-  .landing-nav-right { display: flex; gap: 10px; align-items: center; }
-  .landing-login-btn { background: transparent; border: 1px solid #2a2a2a; border-radius: 4px; padding: 7px 18px; font-size: 12px; color: #888; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.15s ease; }
-  .landing-login-btn:hover { border-color: #ff5500; color: #ff6a1a; }
-  .landing-hero { text-align: center; padding: 88px 24px 64px; max-width: 760px; margin: 0 auto; }
-  .landing-hero-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ff5500; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 18px; }
-  .landing-hero-title { font-size: clamp(34px, 6vw, 60px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; color: white; margin-bottom: 18px; }
-  .landing-hero-title em { color: #ff5500; font-style: normal; }
-  .landing-hero-sub { font-size: 16px; color: #666; line-height: 1.75; max-width: 500px; margin: 0 auto 40px; }
-  .landing-hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .landing-hero-primary { padding: 13px 30px; background: #ff5500; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: var(--font-sans); }
-  .landing-hero-primary:hover { background: #ff6a1a; }
-  .landing-hero-ghost { padding: 13px 30px; background: transparent; color: #888; border: 1px solid #2a2a2a; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; font-family: var(--font-sans); }
-  .landing-hero-ghost:hover { border-color: #ff5500; color: #ff6a1a; }
-
-  /* PRICING CARDS */
-  .pricing-section { padding: 72px 24px 88px; max-width: 1120px; margin: 0 auto; }
-  .pricing-hd { text-align: center; margin-bottom: 52px; }
-  .pricing-hd-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ff5500; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10px; }
-  .pricing-hd-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: white; margin-bottom: 8px; letter-spacing: -0.02em; }
-  .pricing-hd-sub { font-size: 14px; color: #555; }
-  .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
-  .pricing-card { background: #0c0c0c; border: 1px solid #1e1e1e; border-radius: 14px; padding: 26px 22px 24px; position: relative; transition: border-color 0.2s, transform 0.2s; }
-  .pricing-card:hover { border-color: #3a3a3a; transform: translateY(-3px); }
-  .pricing-card.popular { border-color: #ff5500; background: linear-gradient(150deg, rgba(255,85,0,0.07) 0%, #0c0c0c 55%); transform: scale(1.02); }
-  .pricing-card.popular:hover { transform: scale(1.02) translateY(-3px); }
-  .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #ff5500; color: white; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 14px; border-radius: 20px; white-space: nowrap; font-family: 'JetBrains Mono', monospace; }
-  .plan-tier { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #ff5500; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; }
-  .plan-name { font-size: 22px; font-weight: 700; color: white; font-family: var(--font-sans); margin-bottom: 2px; }
-  .plan-price-row { display: flex; align-items: baseline; gap: 3px; margin: 18px 0 2px; }
-  .plan-dollar { font-size: 20px; font-weight: 700; color: #888; margin-top: 6px; }
-  .plan-amount { font-size: 44px; font-weight: 800; color: white; letter-spacing: -0.03em; }
-  .plan-period { font-size: 12px; color: #555; font-family: 'JetBrains Mono', monospace; margin-left: 2px; }
-  .plan-price-note { font-size: 10px; color: #444; font-family: 'JetBrains Mono', monospace; margin-bottom: 20px; }
-  .plan-divider { height: 1px; background: #1a1a1a; margin: 18px 0; }
-  .plan-core { margin-bottom: 8px; }
-  .plan-core-item { font-size: 12px; color: #888; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
-  .plan-core-item strong { color: #ccc; }
-  .plan-feature-group { margin-top: 14px; }
-  .plan-fg-label { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #444; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; }
-  .plan-feature { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 5px; font-size: 12px; color: #666; line-height: 1.4; }
-  .plan-feat-ok { color: #00cc66; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
-  .plan-cta-btn { width: 100%; padding: 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s ease; margin-top: 22px; font-family: var(--font-sans); }
-  .plan-cta-primary { background: #ff5500; color: white; border: none; }
-  .plan-cta-primary:hover { background: #ff6a1a; }
-  .plan-cta-ghost { background: transparent; border: 1px solid #2a2a2a; color: #777; }
-  .plan-cta-ghost:hover { border-color: #ff5500; color: #ff6a1a; }
-  @media (max-width: 900px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } .pricing-card.popular { transform: none; } }
-  @media (max-width: 580px) { .pricing-grid { grid-template-columns: 1fr; } }
-
   /* UPGRADE MODAL */
   .upgrade-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 900; display: flex; align-items: center; justify-content: center; padding: 24px; }
   .upgrade-modal { background: var(--surface-0); border: var(--border); border-radius: 14px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
@@ -794,109 +740,6 @@ const PLANS: PlanDef[] = [
     ctaLabel: "Get Agency", ctaClass: "plan-cta-ghost", paystackAmount: 12000000,
   },
 ];
-
-/* ─── LANDING PAGE ─── */
-function LandingPage({ onLogin }: { onLogin: (plan?: string) => void }) {
-  return (
-    <div className="landing-page">
-      {/* NAV */}
-      <nav className="landing-nav">
-        <div className="landing-logo">
-          <span>[</span>EverydayAI<span>]</span>
-        </div>
-        <div className="landing-nav-right">
-          <button className="landing-login-btn" onClick={() => onLogin()}>Sign in</button>
-          <button className="landing-hero-primary" style={{ padding: "8px 20px", fontSize: 13 }} onClick={() => onLogin("free")}>
-            Get started free
-          </button>
-        </div>
-      </nav>
-
-      {/* HERO */}
-      <div className="landing-hero">
-        <div className="landing-hero-tag">// no-code ai agent platform</div>
-        <h1 className="landing-hero-title">
-          Build <em>AI agents</em> your clients can actually use
-        </h1>
-        <p className="landing-hero-sub">
-          Create, configure, and deploy intelligent chatbots to any website in minutes — no code required. Built for agencies.
-        </p>
-        <div className="landing-hero-btns">
-          <button className="landing-hero-primary" onClick={() => onLogin("free")}>Start for free →</button>
-          <button className="landing-hero-ghost" onClick={() => onLogin()}>Sign in</button>
-        </div>
-      </div>
-
-      {/* PRICING */}
-      <div className="pricing-section">
-        <div className="pricing-hd">
-          <div className="pricing-hd-tag">// pricing</div>
-          <div className="pricing-hd-title">Simple, transparent pricing</div>
-          <div className="pricing-hd-sub">Start free. Upgrade only when you need more.</div>
-        </div>
-        <div className="pricing-grid">
-          {PLANS.map(plan => (
-            <div key={plan.id} className={`pricing-card${plan.popular ? " popular" : ""}`}>
-              {plan.popular && <div className="popular-badge">// most popular</div>}
-              <div className="plan-tier">{plan.tier}</div>
-              <div className="plan-name">{plan.name}</div>
-              <div className="plan-price-row">
-                {plan.price > 0 && <span className="plan-dollar">$</span>}
-                <span className="plan-amount">{plan.price === 0 ? "Free" : plan.price}</span>
-                {plan.period && <span className="plan-period">{plan.period}</span>}
-              </div>
-              <div className="plan-price-note">{plan.priceNote}</div>
-
-              <div className="plan-divider" />
-              <div className="plan-core">
-                <div className="plan-core-item"><strong>{plan.agentLabel}</strong></div>
-                <div className="plan-core-item"><strong>{plan.msgLabel}</strong></div>
-              </div>
-
-              <div className="plan-feature-group">
-                <div className="plan-fg-label">deployment</div>
-                {plan.deployFeatures.map(f => (
-                  <div key={f} className="plan-feature">
-                    <span className="plan-feat-ok">✓</span>{f}
-                  </div>
-                ))}
-              </div>
-
-              {plan.social && plan.social.length > 0 && (
-                <div className="plan-feature-group">
-                  <div className="plan-fg-label">social channels</div>
-                  {plan.social.map(f => (
-                    <div key={f} className="plan-feature">
-                      <span className="plan-feat-ok">✓</span>{f}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {plan.tools && plan.tools.length > 0 && (
-                <div className="plan-feature-group">
-                  <div className="plan-fg-label">tools</div>
-                  {plan.tools.map(f => (
-                    <div key={f} className="plan-feature">
-                      <span className="plan-feat-ok">✓</span>{f}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <button
-                className={`plan-cta-btn ${plan.ctaClass}`}
-                onClick={() => onLogin(plan.id)}
-              >
-                {plan.ctaLabel}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ─── UPGRADE MODAL ─── */
 function UpgradeModal({
@@ -1925,7 +1768,7 @@ const PAGE_TITLES: Record<Page, string> = {
 
 export default function App() {
   const [booting, setBooting] = useState(true);
-  const [showAuth, setShowAuth] = useState(false);
+
   const [user, setUser] = useState<string | null>(() => {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("userEmail");
@@ -2031,20 +1874,8 @@ export default function App() {
   if (!user) return (
     <>
       {booting && <BootLoader onDone={() => setBooting(false)} />}
-      <div style={{ visibility: booting ? "hidden" : "visible" }}>
-        {/* Landing page shown by default; AuthPage shown as overlay when user clicks Login/CTA */}
-        <LandingPage onLogin={(plan) => { setShowAuth(true); }} />
-        {showAuth && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setShowAuth(false)}
-                style={{ position: "absolute", top: -14, right: -14, width: 32, height: 32, borderRadius: "50%", background: "#1a1a1a", border: "1px solid #333", color: "#888", cursor: "pointer", fontSize: 14, zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
-              >✕</button>
-              <AuthPage onAuth={handleAuth} />
-            </div>
-          </div>
-        )}
+      <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
+        <AuthPage onAuth={handleAuth} />
       </div>
     </>
   );
