@@ -1,5 +1,66 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useContext, createContext } from "react";
 import axios from "axios";
+
+/* ── SPINNER CONFIG ─────────────────────────────────────────────────
+   MIN_SPINNER_MS: minimum time (ms) the spinner stays visible.
+   Adjust based on typical backend response times:
+     • Fast ops (local saves, copy):  400ms
+     • Normal API calls:              800ms  ← default
+     • Heavy ops (agent publish, AI): 1200ms
+──────────────────────────────────────────────────────────────────── */
+const MIN_SPINNER_MS = 800;
+
+interface SpinnerCtx { run: <T>(fn: () => Promise<T>, minMs?: number) => Promise<T> }
+const SpinnerContext = createContext<SpinnerCtx>({ run: fn => fn() });
+const useSpinner = () => useContext(SpinnerContext);
+
+function GlobalSpinner({ visible, fading }: { visible: boolean; fading: boolean }) {
+  if (!visible) return null;
+  return (
+    <div className={`gs-overlay${fading ? " gs-fading" : ""}`} aria-live="polite" aria-label="Loading">
+      <div className="gs-box">
+        <div className="gs-ring" />
+        <div className="gs-label">// processing...</div>
+      </div>
+    </div>
+  );
+}
+
+function SpinnerProvider({ children }: { children: React.ReactNode }) {
+  const [visible, setVisible] = useState(false);
+  const [fading, setFading] = useState(false);
+
+  const run = useCallback(async <T,>(fn: () => Promise<T>, minMs: number = MIN_SPINNER_MS): Promise<T> => {
+    setFading(false);
+    setVisible(true);
+    const start = Date.now();
+    try {
+      const result = await fn();
+      const wait = minMs - (Date.now() - start);
+      if (wait > 0) await new Promise(r => setTimeout(r, wait));
+      setFading(true);
+      await new Promise(r => setTimeout(r, 300));
+      setVisible(false);
+      setFading(false);
+      return result;
+    } catch (err) {
+      const wait = Math.min(minMs, 500) - (Date.now() - start);
+      if (wait > 0) await new Promise(r => setTimeout(r, wait));
+      setFading(true);
+      await new Promise(r => setTimeout(r, 300));
+      setVisible(false);
+      setFading(false);
+      throw err;
+    }
+  }, []);
+
+  return (
+    <SpinnerContext.Provider value={{ run }}>
+      {children}
+      <GlobalSpinner visible={visible} fading={fading} />
+    </SpinnerContext.Provider>
+  );
+}
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
@@ -297,6 +358,39 @@ const CSS = `
 
   .divider { height: 1px; background: var(--surface-2); margin: 20px 0; }
   .deploy-wrap { max-width: 660px; }
+
+  /* ── GLOBAL SPINNER ── */
+  @keyframes gs-spin { to { transform: rotate(360deg); } }
+  @keyframes gs-fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes gs-fadeout { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes gs-pulse-glow { 0%,100%{box-shadow:0 0 18px var(--orange-glow-strong)} 50%{box-shadow:0 0 36px rgba(255,85,0,0.55)} }
+
+  .gs-overlay {
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.62); backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center;
+    animation: gs-fadein 0.15s ease;
+  }
+  .gs-overlay.gs-fading { animation: gs-fadeout 0.3s ease forwards; }
+  .gs-box {
+    display: flex; flex-direction: column; align-items: center; gap: 18px;
+    background: var(--surface-1); border: var(--border);
+    border-top: 2px solid var(--orange-500);
+    padding: 32px 40px; border-radius: var(--radius-md);
+    animation: gs-fadein 0.2s ease;
+  }
+  .gs-ring {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 2px solid var(--surface-3);
+    border-top-color: var(--orange-500);
+    animation: gs-spin 0.75s linear infinite, gs-pulse-glow 1.8s ease-in-out infinite;
+  }
+  .gs-label {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--orange-400); letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
   .settings-wrap { max-width: 540px; }
 
   /* ── STUDIO ── */
@@ -752,13 +846,15 @@ function UpgradeModal({
   currentPlan: string; email: string; onClose: () => void; onSuccess: (plan: string) => void;
 }) {
   const [paying, setPaying] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
   const currentIdx = PLANS.findIndex(p => p.id === currentPlan);
   const upgradePlans = PLANS.filter((_, i) => i > currentIdx);
   const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined;
 
   function payWithPaystack(plan: PlanDef) {
+    setPayError(null);
     if (!paystackKey) {
-      alert("Payment not yet configured. Please add your VITE_PAYSTACK_PUBLIC_KEY to Replit secrets.");
+      setPayError("Payment is not yet configured for this environment. Please contact support to upgrade your plan.");
       return;
     }
     setPaying(plan.id);
@@ -799,6 +895,9 @@ function UpgradeModal({
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>✕</button>
         </div>
+        {payError && (
+          <div className="error-msg" style={{ margin: "0 20px 0 20px" }}>{payError}</div>
+        )}
         <div className="upgrade-modal-body">
           {upgradePlans.map(plan => (
             <div key={plan.id} className={`upgrade-plan-row${plan.popular ? " popular" : ""}`}>
@@ -862,6 +961,7 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
   const [pass, setPass] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
+  const { run } = useSpinner();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -869,24 +969,25 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
     setErr("");
     setLoading(true);
     try {
-      const endpoint = mode === "login" ? "/auth/login" : "/auth/signup";
-      await axios.post(
-        `https://everydayai-backend-production.up.railway.app${endpoint}`,
-        { email, password: pass }
-      );
-      if (mode === "signup") {
-        setMode("login");
-        setErr("");
-        setLoading(false);
-        return;
-      }
-      const res = await axios.post(
-        "https://everydayai-backend-production.up.railway.app/auth/login",
-        { email, password: pass }
-      );
-      const token = res.data?.access_token || res.data?.token;
-      if (token) localStorage.setItem("token", token);
-      onAuth(email);
+      await run(async () => {
+        const endpoint = mode === "login" ? "/auth/login" : "/auth/signup";
+        await axios.post(
+          `https://everydayai-backend-production.up.railway.app${endpoint}`,
+          { email, password: pass }
+        );
+        if (mode === "signup") {
+          setMode("login");
+          setErr("");
+          return;
+        }
+        const res = await axios.post(
+          "https://everydayai-backend-production.up.railway.app/auth/login",
+          { email, password: pass }
+        );
+        const token = res.data?.access_token || res.data?.token;
+        if (token) localStorage.setItem("token", token);
+        onAuth(email);
+      });
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
         const d = e.response?.data;
@@ -1076,6 +1177,7 @@ function AgentsPage({ onNew, refreshKey }: { onNew: (count: number) => void; ref
 type KbStatus = "saved" | "saving" | "unsaved";
 
 function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (p: Page) => void }) {
+  const { run } = useSpinner();
   const [tab, setTab] = React.useState(0);
   const [agent, setAgent] = React.useState<any>(null);
   const [agents, setAgents] = React.useState<any[]>([]);
@@ -1140,14 +1242,21 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
   const save = async () => {
     if (!agent) return;
     setSaving(true);
-    const token = localStorage.getItem("token");
-    await fetch("https://everydayai-backend-production.up.railway.app/agents/" + agent.id, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-      body: JSON.stringify({ system_prompt: prompt, model })
-    }).catch(() => {});
-    setSaving(false);
-    toast("Configuration saved");
+    try {
+      await run(async () => {
+        const token = localStorage.getItem("token");
+        await fetch("https://everydayai-backend-production.up.railway.app/agents/" + agent.id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+          body: JSON.stringify({ system_prompt: prompt, model })
+        });
+        toast("Configuration saved");
+      }, 900);
+    } catch {
+      toast("Save failed. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const simulateResponse = (userMsg: string) => {
@@ -1411,6 +1520,7 @@ type DeployDest = "socials" | "custom" | "website";
 type SocialPlatform = "whatsapp" | "instagram" | "messenger";
 
 function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void; refreshKey: number; setPage: (p: Page) => void }) {
+  const { run } = useSpinner();
   const { agents, loading, error } = useAgents(refreshKey);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -1429,15 +1539,17 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
     setPublishing(true);
     setPublishError(null);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `https://everydayai-backend-production.up.railway.app/agents/${selectedAgent.id}/publish`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const wt = res.data?.widget_token ?? res.data?.token ?? res.data?.access_token ?? JSON.stringify(res.data);
-      setWidgetToken(wt);
-      toast("Agent published!");
+      await run(async () => {
+        const token = localStorage.getItem("token");
+        const res = await axios.post(
+          `https://everydayai-backend-production.up.railway.app/agents/${selectedAgent.id}/publish`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const wt = res.data?.widget_token ?? res.data?.token ?? res.data?.access_token ?? JSON.stringify(res.data);
+        setWidgetToken(wt);
+        toast("Agent published!");
+      }, 1200);
     } catch (e: unknown) {
       const d = axios.isAxiosError(e) ? e.response?.data : null;
       const msg = d?.detail || d?.message || (typeof d === "string" ? d : null) || "Publish failed. Please try again.";
@@ -1706,6 +1818,7 @@ function SettingsPage({ email, toast }: { email: string; toast: (m: string) => v
 }
 
 function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { run } = useSpinner();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
@@ -1719,13 +1832,15 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
     if (!name.trim()) { setErr("Agent name is required."); return; }
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "https://everydayai-backend-production.up.railway.app/agents/",
-        { name, description: desc, system_prompt: systemPrompt, model },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      onCreated();
+      await run(async () => {
+        const token = localStorage.getItem("token");
+        await axios.post(
+          "https://everydayai-backend-production.up.railway.app/agents/",
+          { name, description: desc, system_prompt: systemPrompt, model },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        onCreated();
+      }, 1000);
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
         if (!e.response) {
@@ -1893,16 +2008,16 @@ export default function App() {
   }
 
   if (!user) return (
-    <>
+    <SpinnerProvider>
       {booting && <BootLoader onDone={() => setBooting(false)} />}
       <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
         <AuthPage onAuth={handleAuth} />
       </div>
-    </>
+    </SpinnerProvider>
   );
 
   return (
-    <>
+    <SpinnerProvider>
       {booting && <BootLoader onDone={() => setBooting(false)} />}
       <div className="app" style={{ visibility: booting ? "hidden" : "visible" }}>
       <div className="scanlines" />
@@ -1963,6 +2078,6 @@ export default function App() {
       )}
       {toastMsg && <Toast msg={toastMsg} onDone={() => setToastMsg(null)} />}
     </div>
-    </>
+    </SpinnerProvider>
   );
 }
