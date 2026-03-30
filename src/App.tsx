@@ -750,7 +750,7 @@ function UpgradeModal({
   const [paying, setPaying] = useState<string | null>(null);
   const currentIdx = PLANS.findIndex(p => p.id === currentPlan);
   const upgradePlans = PLANS.filter((_, i) => i > currentIdx);
-  const paystackKey = (import.meta as any).env?.VITE_PAYSTACK_PUBLIC_KEY;
+  const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined;
 
   function payWithPaystack(plan: PlanDef) {
     if (!paystackKey) {
@@ -814,8 +814,7 @@ function UpgradeModal({
           ))}
         </div>
         <div className="upgrade-modal-footer">
-          // powered by Paystack — supports cards, bank transfers, USSD and more.<br />
-          // add VITE_PAYSTACK_PUBLIC_KEY to Replit secrets to activate payments.
+          // powered by Paystack — supports cards, bank transfers, USSD and more.
         </div>
       </div>
     </div>
