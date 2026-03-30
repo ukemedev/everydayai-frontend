@@ -175,12 +175,6 @@ const CSS = `
   .info-msg { background: rgba(0,200,100,0.07); border: 1px solid rgba(0,200,100,0.25); color: var(--green-term); padding: 10px 14px; font-size: 11px; margin-bottom: 18px; border-radius: var(--radius); }
   .auth-link-sm { font-size: 10px; color: var(--text-muted); cursor: pointer; transition: var(--transition); }
   .auth-link-sm:hover { color: var(--orange-400); }
-  .auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
-  .auth-divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
-  .auth-divider-text { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); letter-spacing: 0.08em; }
-  .auth-google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; background: var(--surface-2); border: var(--border); border-radius: var(--radius); cursor: pointer; font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--white); transition: var(--transition); }
-  .auth-google-btn:hover:not(:disabled) { border-color: #666; box-shadow: 0 0 0 2px rgba(255,255,255,0.05); }
-  .auth-google-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .auth-verify-wrap { text-align: center; }
   .auth-verify-icon { font-size: 48px; margin-bottom: 16px; display: block; }
   .auth-verify-email { font-family: var(--font-mono); font-size: 12px; color: var(--orange-400); background: var(--surface-2); padding: 8px 12px; border-radius: var(--radius); border: var(--border); margin: 16px 0; word-break: break-all; display: inline-block; }
@@ -1011,8 +1005,6 @@ function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
   );
 }
 
-const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID as string | undefined;
-
 function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
   const [mode, setMode] = useState<"login" | "signup" | "forgot" | "verify">("login");
   const [email, setEmail] = useState("");
@@ -1020,77 +1012,11 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const { run } = useSpinner();
 
-  // Load Google Identity Services and initialise once
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return;
-
-    function initGoogle() {
-      (window as any).google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      });
-    }
-
-    if ((window as any).google?.accounts?.id) {
-      initGoogle();
-    } else if (!document.getElementById("google-gis")) {
-      const s = document.createElement("script");
-      s.id = "google-gis";
-      s.src = "https://accounts.google.com/gsi/client";
-      s.async = true;
-      s.defer = true;
-      s.onload = () => {
-        if ((window as any).google?.accounts?.id) initGoogle();
-      };
-      document.head.appendChild(s);
-    }
-  }, []);
-
   function switchMode(m: "login" | "signup" | "forgot") {
     setMode(m); setErr(""); setInfo("");
-  }
-
-  async function handleGoogleCredential(response: { credential: string }) {
-    setErr(""); setInfo("");
-    setGoogleLoading(true);
-    try {
-      const res = await axios.post(
-        "https://everydayai-backend-production.up.railway.app/auth/google",
-        { token: response.credential }
-      );
-      const token = res.data?.access_token || res.data?.token;
-      const userEmail = res.data?.email || res.data?.user?.email || email;
-      if (token) localStorage.setItem("token", token);
-      onAuth(userEmail);
-    } catch (e: unknown) {
-      if (axios.isAxiosError(e)) {
-        const d = e.response?.data;
-        setErr(d?.detail || d?.message || (typeof d === "string" ? d : null) || "Google sign-in failed. Please try again.");
-      } else {
-        setErr("Google sign-in failed. Please try again.");
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
-  }
-
-  function signInWithGoogle() {
-    if (!(window as any).google?.accounts?.id) {
-      setErr("Google sign-in is loading, please wait a moment and try again.");
-      return;
-    }
-    setErr("");
-    (window as any).google.accounts.id.prompt((notification: any) => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        setErr("Google sign-in was blocked by your browser. Please allow popups and try again.");
-      }
-    });
   }
 
   async function submit(e: React.FormEvent) {
@@ -1182,8 +1108,6 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
     verify: "verify",
   };
 
-  const showGoogleBtn = !!GOOGLE_CLIENT_ID && (mode === "login" || mode === "signup");
-
   // Verify email screen
   if (mode === "verify") {
     return (
@@ -1243,35 +1167,6 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
           {err && <div className="error-msg">{err}</div>}
           {info && <div className="info-msg">{info}</div>}
 
-          {/* Google Sign-In */}
-          {showGoogleBtn && (
-            <>
-              <button
-                type="button"
-                className="auth-google-btn"
-                onClick={signInWithGoogle}
-                disabled={googleLoading || loading}
-              >
-                {googleLoading ? (
-                  <BtnSpinner />
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                  </svg>
-                )}
-                {googleLoading ? "Signing in..." : "Continue with Google"}
-              </button>
-              <div className="auth-divider">
-                <div className="auth-divider-line" />
-                <span className="auth-divider-text">or</span>
-                <div className="auth-divider-line" />
-              </div>
-            </>
-          )}
-
           <form onSubmit={submit}>
             <div className="field">
               <label>Email</label>
@@ -1304,7 +1199,7 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
                 <a className="auth-link-sm" onClick={() => switchMode("forgot")}>Forgot password?</a>
               </div>
             )}
-            <button type="submit" className="btn btn-primary" disabled={loading || googleLoading}>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
               <span className="btn-inner">
                 {loading && <BtnSpinner />}
                 {loading
