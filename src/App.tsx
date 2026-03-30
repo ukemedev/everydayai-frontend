@@ -1,6 +1,27 @@
 import React, { useState, useEffect, useRef, useCallback, useContext, createContext } from "react";
 import axios from "axios";
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { crashed: boolean; msg: string }> {
+  constructor(props: any) { super(props); this.state = { crashed: false, msg: "" }; }
+  static getDerivedStateFromError(e: any) { return { crashed: true, msg: e?.message || "Unknown error" }; }
+  componentDidCatch() {}
+  render() {
+    if (this.state.crashed) {
+      return (
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#0d0d0d", color: "#fff", fontFamily: "monospace", gap: 16, padding: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#ff5500" }}>[EverydayAI]</div>
+          <div style={{ fontSize: 12, color: "#aaa" }}>// something went wrong. please refresh the page.</div>
+          <div style={{ fontSize: 10, color: "#555", maxWidth: 400, textAlign: "center" }}>{this.state.msg}</div>
+          <button onClick={() => window.location.reload()} style={{ marginTop: 8, padding: "8px 20px", background: "#ff5500", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 /* ── SPINNER CONFIG ─────────────────────────────────────────────────
    MIN_SPINNER_MS: minimum time (ms) the spinner stays visible.
    Adjust based on typical backend response times:
@@ -2488,15 +2509,18 @@ export default function App() {
   }
 
   if (!user) return (
-    <SpinnerProvider>
-      {booting && <BootLoader onDone={() => setBooting(false)} />}
-      <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
-        <AuthPage onAuth={handleAuth} />
-      </div>
-    </SpinnerProvider>
+    <ErrorBoundary>
+      <SpinnerProvider>
+        {booting && <BootLoader onDone={() => setBooting(false)} />}
+        <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
+          <AuthPage onAuth={handleAuth} />
+        </div>
+      </SpinnerProvider>
+    </ErrorBoundary>
   );
 
   return (
+    <ErrorBoundary>
     <SpinnerProvider>
       {booting && <BootLoader onDone={() => setBooting(false)} />}
       <div className="app" data-theme={theme} style={{ visibility: booting ? "hidden" : "visible" }}>
@@ -2573,5 +2597,6 @@ export default function App() {
       {toastMsg && <Toast msg={toastMsg} onDone={() => setToastMsg(null)} />}
     </div>
     </SpinnerProvider>
+    </ErrorBoundary>
   );
 }
