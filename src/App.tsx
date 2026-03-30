@@ -532,14 +532,18 @@ const CSS = `
   .upgrade-modal-title { font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: white; margin-bottom: 4px; }
   .upgrade-modal-sub { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.6; }
   .upgrade-modal-body { padding: 18px 24px; display: flex; flex-direction: column; gap: 10px; }
-  .upgrade-plan-row { border: var(--border); border-radius: var(--radius-md); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: border-color 0.15s; flex-wrap: wrap; }
+  .upgrade-plan-row { border: var(--border); border-radius: var(--radius-md); padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; transition: border-color 0.15s; }
   .upgrade-plan-row:hover { border-color: var(--orange-400); }
   .upgrade-plan-row.popular { border-color: var(--orange-500); background: rgba(255,85,0,0.04); }
   .upgrade-plan-info { flex: 1; min-width: 0; }
-  .upgrade-plan-name { font-weight: 600; font-size: 13px; color: white; margin-bottom: 3px; font-family: var(--font-sans); }
-  .upgrade-plan-feats { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.7; }
-  .upgrade-plan-price { font-size: 20px; font-weight: 800; color: var(--orange-400); font-family: var(--font-sans); flex-shrink: 0; }
-  .upgrade-btn { padding: 8px 18px; background: var(--orange-500); color: white; border: none; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; flex-shrink: 0; }
+  .upgrade-plan-name { font-weight: 600; font-size: 13px; color: white; margin-bottom: 6px; font-family: var(--font-sans); }
+  .upgrade-plan-feats { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); display: flex; flex-direction: column; gap: 5px; }
+  .feat-core { color: #aaa; letter-spacing: 0.02em; }
+  .feat-group { display: flex; flex-direction: column; gap: 2px; }
+  .feat-group-label { color: var(--orange-500); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 3px; }
+  .feat-item { color: var(--text-muted); padding-left: 2px; }
+  .upgrade-plan-price { font-size: 20px; font-weight: 800; color: var(--orange-400); font-family: var(--font-sans); flex-shrink: 0; white-space: nowrap; }
+  .upgrade-btn { padding: 8px 18px; background: var(--orange-500); color: white; border: none; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
   .upgrade-btn:hover { background: var(--orange-400); }
   .upgrade-modal-footer { padding: 0 24px 20px; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.8; }
 
@@ -801,15 +805,33 @@ function UpgradeModal({
               <div className="upgrade-plan-info">
                 <div className="upgrade-plan-name">{plan.name} {plan.popular && "⭐"}</div>
                 <div className="upgrade-plan-feats">
-                  {plan.agentLabel} · {plan.msgLabel}
-                  {plan.social && plan.social.length > 0 && ` · ${plan.social[0]}`}
-                  {plan.tools && plan.tools.length > 0 && ` · ${plan.tools[0]}`}
+                  <span className="feat-core">{plan.agentLabel} · {plan.msgLabel}</span>
+                  {plan.deployFeatures && plan.deployFeatures.length > 0 && (
+                    <span className="feat-group">
+                      <span className="feat-group-label">// deployment</span>
+                      {plan.deployFeatures.map(f => <span key={f} className="feat-item">› {f}</span>)}
+                    </span>
+                  )}
+                  {plan.social && plan.social.length > 0 && (
+                    <span className="feat-group">
+                      <span className="feat-group-label">// social channels</span>
+                      {plan.social.map(f => <span key={f} className="feat-item">› {f}</span>)}
+                    </span>
+                  )}
+                  {plan.tools && plan.tools.length > 0 && (
+                    <span className="feat-group">
+                      <span className="feat-group-label">// tools</span>
+                      {plan.tools.map(f => <span key={f} className="feat-item">› {f}</span>)}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="upgrade-plan-price">${plan.price}<span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 400 }}>/mo</span></div>
-              <button className="upgrade-btn" onClick={() => payWithPaystack(plan)} disabled={paying === plan.id}>
-                {paying === plan.id ? "Opening..." : `Upgrade →`}
-              </button>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, flexShrink: 0 }}>
+                <div className="upgrade-plan-price">${plan.price}<span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 400 }}>/mo</span></div>
+                <button className="upgrade-btn" onClick={() => payWithPaystack(plan)} disabled={paying === plan.id}>
+                  {paying === plan.id ? "Opening..." : plan.ctaLabel}
+                </button>
+              </div>
             </div>
           ))}
         </div>
