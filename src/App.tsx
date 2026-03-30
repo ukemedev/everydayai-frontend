@@ -1049,6 +1049,7 @@ function AuthPage({ onAuth }: { onAuth: (email: string) => void }) {
         const token = res.data?.access_token || res.data?.token;
         if (!token) throw new Error("No token received from server. Please try again.");
         localStorage.setItem("token", token);
+        setErr(""); // Clear any residual error state before transitioning
         onAuth(email);
       });
     } catch (e: unknown) {
@@ -1310,9 +1311,9 @@ function Dashboard({ setPage, refreshKey }: { setPage: (p: Page) => void; refres
   );
 }
 
-function AgentCard({ agent }: { agent: Agent }) {
+function AgentCard({ agent, onOpenStudio }: { agent: Agent; onOpenStudio?: () => void }) {
   return (
-    <div className="card agent-card">
+    <div className="card agent-card" onClick={onOpenStudio} style={{ cursor: onOpenStudio ? "pointer" : "default" }}>
       <div className="agent-card-top">
         <div className="agent-id">{agent.id}</div>
         <span className={`status-badge ${agent.status === "live" ? "status-live" : "status-draft"}`}>
@@ -1323,12 +1324,21 @@ function AgentCard({ agent }: { agent: Agent }) {
       <div className="agent-desc">{agent.desc}</div>
       <div className="agent-footer">
         <span className="model-tag">{agent.model}</span>
+        {onOpenStudio && (
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ marginLeft: "auto", fontSize: 10, padding: "3px 10px" }}
+            onClick={e => { e.stopPropagation(); onOpenStudio(); }}
+          >
+            Open in Studio →
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-function AgentsPage({ onNew, refreshKey }: { onNew: (count: number) => void; refreshKey: number }) {
+function AgentsPage({ onNew, refreshKey, setPage }: { onNew: (count: number) => void; refreshKey: number; setPage: (p: Page) => void }) {
   const { agents, loading, error } = useAgents(refreshKey);
 
   return (
@@ -1344,7 +1354,7 @@ function AgentsPage({ onNew, refreshKey }: { onNew: (count: number) => void; ref
       {loading && <div className="term-line">fetching agents...</div>}
       {error && <div className="error-msg">{error}</div>}
       <div className="card-grid">
-        {agents.map(a => <AgentCard key={a.id} agent={a} />)}
+        {agents.map(a => <AgentCard key={a.id} agent={a} onOpenStudio={() => setPage("studio")} />)}
       </div>
     </div>
   );
@@ -1483,8 +1493,9 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
       setAgent(a);
       setPrompt(a.system_prompt || "");
       setModel(a.model || "gpt-4o-mini");
+      setKnowledge("");
       setMsgs([{ role: "agent", text: "[" + a.name + "] loaded. Test it in the chat." }]);
-      setKbStatus("saving");
+      setKbStatus("saving"); // reuse "saving" spinner to indicate loading KB
       const kb = await loadKbFromBackend(String(a.id));
       setKnowledge(kb);
       setKbStatus("saved");
@@ -1544,7 +1555,7 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 
   const TABS = ["// prompt", "// knowledge", "// tools", "// deploy"];
 
-  const kbStatusLabel = kbStatus === "saved" ? "// saved to cloud" : kbStatus === "saving" ? "// saving..." : "// unsaved changes";
+  const kbStatusLabel = kbStatus === "saved" ? "// saved to cloud" : kbStatus === "saving" ? "// syncing..." : "// unsaved changes";
 
   return (
     <div className="studio-split">
@@ -1554,7 +1565,10 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
         <div className="studio-left-header">
 
           {loadingAgents ? (
-            <div className="studio-no-agent">// loading agents...</div>
+            <div className="studio-no-agent" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span className="btn-spinner" style={{ borderColor: "rgba(255,85,0,0.2)", borderTopColor: "var(--orange-400)", flexShrink: 0 }} />
+              <span>// loading agents...</span>
+            </div>
           ) : studioErr ? (
             <div>
               <div className="error-msg" style={{ margin: "0 0 12px" }}>{studioErr}</div>
@@ -1808,6 +1822,7 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
         );
         const wt = res.data?.widget_token ?? res.data?.token ?? res.data?.access_token ?? JSON.stringify(res.data);
         setWidgetToken(wt);
+        setSelectedAgent(prev => prev ? { ...prev, status: "live" } : null);
         toast("Agent published!");
       }, 1200);
     } catch (e: unknown) {
@@ -2059,12 +2074,31 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
 }) {
   const [apiKey, setApiKey] = useState("");
   const [saved, setSaved] = useState(false);
+  const [savingKey, setSavingKey] = useState(false);
 
-  const saveKey = () => {
+  const saveKey = async () => {
     if (!apiKey.trim()) return;
-    setSaved(true);
-    toast("API key saved.");
-    setTimeout(() => setSaved(false), 3000);
+    setSavingKey(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("https://everydayai-backend-production.up.railway.app/auth/api-key", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ api_key: apiKey }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        toast(data?.detail || data?.message || "Failed to save API key.");
+      } else {
+        setSaved(true);
+        toast("API key saved.");
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } catch {
+      toast("Failed to save API key. Check your connection.");
+    } finally {
+      setSavingKey(false);
+    }
   };
 
   const currentPlan = PLANS.find(p => p.id === plan) || PLANS[0];
@@ -2128,8 +2162,10 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
         <div className="settings-block-desc">Connect your OpenAI key to power agents in your workspace.</div>
         {saved && <div className="alert-box alert-ok">// key saved successfully.</div>}
         <div className="input-row">
-          <input className="input" type="password" placeholder="sk-..." value={apiKey} onChange={e => setApiKey(e.target.value)} />
-          <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={saveKey}>Save</button>
+          <input className="input" type="password" placeholder="sk-..." value={apiKey} onChange={e => setApiKey(e.target.value)} disabled={savingKey} />
+          <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={saveKey} disabled={savingKey}>
+            <span className="btn-inner">{savingKey && <BtnSpinner />}{savingKey ? "Saving..." : "Save"}</span>
+          </button>
         </div>
       </div>
 
@@ -2205,7 +2241,6 @@ function NewAgentModal({ onClose, onCreated }: { onClose: () => void; onCreated:
               <select className="input" value={model} onChange={e => setModel(e.target.value)}>
                 <option value="gpt-4o">gpt-4o</option>
                 <option value="gpt-4o-mini">gpt-4o-mini</option>
-                <option value="claude-3.5">claude-3.5</option>
               </select>
             </div>
             <div className="modal-footer">
@@ -2468,7 +2503,7 @@ export default function App() {
             </div>
           </div>
           {page === "dashboard" && <Dashboard setPage={setPage} refreshKey={refreshKey} />}
-          {page === "agents" && <AgentsPage onNew={handleNewAgent} refreshKey={refreshKey} />}
+          {page === "agents" && <AgentsPage onNew={handleNewAgent} refreshKey={refreshKey} setPage={setPage} />}
           {page === "studio" && <StudioPage toast={toast} setPage={setPage} />}
           {page === "deploy" && <DeployPage toast={toast} refreshKey={refreshKey} setPage={setPage} />}
           {page === "settings" && <SettingsPage email={user} toast={toast} plan={userPlan} onUpgrade={() => setUpgradeModal(true)} />}

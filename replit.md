@@ -17,7 +17,7 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 - All CSS is a single template literal constant in `src/App.tsx` injected via useEffect
 
 ## Key Files
-- `src/App.tsx` — Everything: CSS, all page components, auth, routing (~2100 lines)
+- `src/App.tsx` — Everything: CSS, all page components, auth, routing (~2515 lines)
 - `vite.config.ts` — Port 5000, host 0.0.0.0
 
 ## Pricing Plans (PLANS constant)
@@ -87,6 +87,7 @@ No-code AI agent platform frontend. Agency owners create AI chatbots, upload kno
 - `POST /agents/{id}/chat` — Send message, returns `{ response }` (or message/reply/content)
 - `GET /agents/{id}/files` — List uploaded files (array or `{ files: [] }`)
 - `POST /agents/{id}/files` — Upload file (multipart/form-data, field: `file`)
+- `PUT /auth/api-key` — Save user's OpenAI API key `{ api_key }`
 
 ## Environment Variables Needed
 - `VITE_PAYSTACK_PUBLIC_KEY` — Paystack public key (pk_live_... or pk_test_...) — set in Replit Secrets

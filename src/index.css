@@ -1,1 +1,1 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Global styles are injected dynamically by App.tsx */
