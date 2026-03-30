@@ -2074,11 +2074,14 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
 }) {
   const [apiKey, setApiKey] = useState("");
   const [saved, setSaved] = useState(false);
+  const [keyError, setKeyError] = useState("");
   const [savingKey, setSavingKey] = useState(false);
 
   const saveKey = async () => {
     if (!apiKey.trim()) return;
     setSavingKey(true);
+    setSaved(false);
+    setKeyError("");
     try {
       const token = localStorage.getItem("token");
       const res = await fetch("https://everydayai-backend-production.up.railway.app/auth/api-key", {
@@ -2088,14 +2091,18 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        toast(data?.detail || data?.message || "Failed to save API key.");
+        const errMsg = data?.detail || data?.message || "Failed to save API key.";
+        setKeyError(errMsg);
+        toast(errMsg);
       } else {
         setSaved(true);
-        toast("API key saved.");
-        setTimeout(() => setSaved(false), 3000);
+        toast("API key saved successfully.");
+        setTimeout(() => setSaved(false), 4000);
       }
     } catch {
-      toast("Failed to save API key. Check your connection.");
+      const errMsg = "Failed to save API key. Check your connection.";
+      setKeyError(errMsg);
+      toast(errMsg);
     } finally {
       setSavingKey(false);
     }
@@ -2124,8 +2131,8 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
         <div className="settings-block-title">Billing & Plan</div>
         <div className="settings-block-desc">Manage your subscription and usage limits.</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,85,0,0.06)", border: "1px solid rgba(255,85,0,0.18)", borderRadius: 6, padding: "14px 16px" }}>
-            <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, background: "rgba(255,85,0,0.06)", border: "1px solid rgba(255,85,0,0.18)", borderRadius: 6, padding: "14px 16px" }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--orange-400)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
                 {currentPlan.tier}
               </div>
@@ -2142,7 +2149,7 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
               </div>
             </div>
             {plan !== "agency" && (
-              <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} onClick={onUpgrade}>
+              <button type="button" className="btn btn-primary btn-sm" style={{ flexShrink: 0, whiteSpace: "nowrap" }} onClick={onUpgrade}>
                 Upgrade plan
               </button>
             )}
@@ -2161,9 +2168,10 @@ function SettingsPage({ email, toast, plan, onUpgrade }: {
         <div className="settings-block-title">OpenAI API Key</div>
         <div className="settings-block-desc">Connect your OpenAI key to power agents in your workspace.</div>
         {saved && <div className="alert-box alert-ok">// key saved successfully.</div>}
+        {keyError && <div className="alert-box" style={{ borderColor: "var(--red-term, #ff4444)", color: "var(--red-term, #ff4444)", background: "rgba(255,68,68,0.06)", marginBottom: 12 }}>// {keyError}</div>}
         <div className="input-row">
-          <input className="input" type="password" placeholder="sk-..." value={apiKey} onChange={e => setApiKey(e.target.value)} disabled={savingKey} />
-          <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={saveKey} disabled={savingKey}>
+          <input className="input" type="password" placeholder="sk-..." value={apiKey} onChange={e => { setApiKey(e.target.value); setKeyError(""); }} disabled={savingKey} />
+          <button type="button" className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={saveKey} disabled={savingKey}>
             <span className="btn-inner">{savingKey && <BtnSpinner />}{savingKey ? "Saving..." : "Save"}</span>
           </button>
         </div>
