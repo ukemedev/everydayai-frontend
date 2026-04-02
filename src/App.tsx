@@ -1832,8 +1832,9 @@ const BASE = "https://everydayai-backend-production.up.railway.app";
 interface WaStatus { connected: boolean; phone_number: string | null; phone_number_id: string | null; }
 
 function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: string) => void }) {
-  const [status, setStatus] = useState<WaStatus | null>(null);
-  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectedInfo, setConnectedInfo] = useState<{ phone_number: string; phone_number_id: string } | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const [waToken, setWaToken] = useState("");
   const [phoneNumId, setPhoneNumId] = useState("");
   const [phoneNum, setPhoneNum] = useState("");
@@ -1842,16 +1843,26 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
   const [connectErr, setConnectErr] = useState("");
 
   useEffect(() => {
-    if (!agent) { setStatus(null); return; }
-    setLoadingStatus(true);
+    if (!agent) { setIsConnected(false); setConnectedInfo(null); return; }
+    setCheckingStatus(true);
     const authTok = localStorage.getItem("token");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
     fetch(`${BASE}/agents/${agent.id}/whatsapp/status`, {
       headers: { Authorization: `Bearer ${authTok}` },
+      signal: controller.signal,
     })
       .then(r => r.ok ? r.json() : null)
-      .then(d => setStatus(d ?? { connected: false, phone_number: null, phone_number_id: null }))
-      .catch(() => setStatus({ connected: false, phone_number: null, phone_number_id: null }))
-      .finally(() => setLoadingStatus(false));
+      .then(d => {
+        clearTimeout(timer);
+        if (d?.connected && d.phone_number) {
+          setIsConnected(true);
+          setConnectedInfo({ phone_number: d.phone_number, phone_number_id: d.phone_number_id ?? "" });
+        }
+      })
+      .catch(() => { /* not connected — stay on form */ })
+      .finally(() => setCheckingStatus(false));
+    return () => { controller.abort(); clearTimeout(timer); };
   }, [agent?.id]);
 
   async function connect() {
@@ -1874,7 +1885,8 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
         } catch { /* ignore */ }
         setConnectErr(err);
       } else {
-        setStatus({ connected: true, phone_number: phoneNum.trim(), phone_number_id: phoneNumId.trim() });
+        setIsConnected(true);
+        setConnectedInfo({ phone_number: phoneNum.trim(), phone_number_id: phoneNumId.trim() });
         setWaToken(""); setPhoneNumId(""); setPhoneNum("");
         toast("WhatsApp connected successfully!");
       }
@@ -1892,7 +1904,7 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
         headers: { Authorization: `Bearer ${authTok}` },
       });
       if (res.ok) {
-        setStatus({ connected: false, phone_number: null, phone_number_id: null });
+        setIsConnected(false); setConnectedInfo(null);
         toast("WhatsApp disconnected.");
       } else { toast("Failed to disconnect. Try again."); }
     } catch { toast("Failed to disconnect. Check your connection."); }
@@ -1907,9 +1919,7 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
     </div>
   );
 
-  if (loadingStatus) return <div className="term-line">// loading WhatsApp status...</div>;
-
-  if (status?.connected) return (
+  if (isConnected && connectedInfo) return (
     <div className="wa-connected-card page-enter">
       <div className="wa-status-row">
         <span className="wa-dot" />
@@ -1917,7 +1927,7 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
       </div>
       <div className="wa-info-row">
         <span className="wa-info-key">Phone Number</span>
-        <span className="wa-info-val">{status.phone_number}</span>
+        <span className="wa-info-val">{connectedInfo.phone_number}</span>
       </div>
       <div className="wa-info-row">
         <span className="wa-info-key">Agent</span>
@@ -1925,7 +1935,7 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
       </div>
       <div className="wa-info-row">
         <span className="wa-info-key">Phone Number ID</span>
-        <span className="wa-info-val" style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{status.phone_number_id}</span>
+        <span className="wa-info-val" style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{connectedInfo.phone_number_id}</span>
       </div>
       <button type="button" className="btn btn-danger btn-sm" style={{ marginTop: 4, width: "auto" }} onClick={disconnect} disabled={disconnecting}>
         <span className="btn-inner">{disconnecting && <BtnSpinner />}{disconnecting ? "Disconnecting..." : "Disconnect"}</span>
@@ -1942,6 +1952,9 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
           Get these from the Meta Developer Dashboard →
         </a>
       </div>
+      {checkingStatus && (
+        <div style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>// checking existing connection...</div>
+      )}
       {connectErr && (
         <div className="alert-box" style={{ borderColor: "#ff4444", color: "#ff4444", background: "rgba(255,68,68,0.06)" }}>
           ✗ {connectErr}
