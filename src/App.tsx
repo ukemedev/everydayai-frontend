@@ -1394,8 +1394,6 @@ function AgentsPage({ onNew, refreshKey, setPage }: { onNew: (count: number) => 
   );
 }
 
-type KbStatus = "saved" | "saving" | "unsaved";
-
 function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (p: Page) => void }) {
   const { run } = useSpinner();
   const [tab, setTab] = React.useState(0);
@@ -1404,7 +1402,8 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
   const [prompt, setPrompt] = React.useState("");
   const [model, setModel] = React.useState("gpt-4o-mini");
   const [knowledge, setKnowledge] = React.useState("");
-  const [kbStatus, setKbStatus] = React.useState<KbStatus>("saved");
+  const [kbSaving, setKbSaving] = React.useState(false);
+  const [kbLoading, setKbLoading] = React.useState(false);
   const [tools, setTools] = React.useState<{ id: number; name: string; method: string; endpoint: string }[]>([]);
   const [newTool, setNewTool] = React.useState({ name: "", method: "GET", endpoint: "" });
   const [msgs, setMsgs] = React.useState([{ role: "agent", text: "Studio ready. Configure your agent on the left, then test it here." }]);
@@ -1414,7 +1413,6 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
   const [loadingAgents, setLoadingAgents] = React.useState(true);
   const [studioErr, setStudioErr] = React.useState<string | null>(null);
   const endRef = React.useRef<any>(null);
-  const kbTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -1439,9 +1437,10 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
           setPrompt(raw[0].system_prompt || "");
           setModel(raw[0].model || "gpt-4o-mini");
           setMsgs([{ role: "agent", text: "[" + raw[0].name + "] loaded. Configure it on the left, then test it here." }]);
+          setKbLoading(true);
           const kb = await loadKbFromBackend(String(raw[0].id)).catch(() => "");
           setKnowledge(kb);
-          setKbStatus("saved");
+          setKbLoading(false);
         }
       })
       .catch(err => {
@@ -1500,26 +1499,19 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
     }
   };
 
-  const handleKnowledgeChange = (val: string) => {
-    setKnowledge(val);
-    setKbStatus("unsaved");
-    if (kbTimerRef.current) clearTimeout(kbTimerRef.current);
-    if (!agent) return;
-    kbTimerRef.current = setTimeout(async () => {
-      setKbStatus("saving");
-      try {
-        await saveKbToBackend(String(agent.id), val);
-        setKbStatus("saved");
-        toast("Knowledge base saved.");
-      } catch (err: unknown) {
-        setKbStatus("unsaved");
-        const msg = err instanceof Error ? err.message : "Failed to save knowledge base.";
-        toast(msg);
-      }
-    }, 1200);
+  const saveKb = async () => {
+    if (!agent || !knowledge.trim()) return;
+    setKbSaving(true);
+    try {
+      await saveKbToBackend(String(agent.id), knowledge);
+      toast("Knowledge base saved to vector store.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save knowledge base.";
+      toast(msg);
+    } finally {
+      setKbSaving(false);
+    }
   };
-
-  React.useEffect(() => () => { if (kbTimerRef.current) clearTimeout(kbTimerRef.current); }, []);
 
   const selectAgent = async (id: string) => {
     const a = agents.find((x: any) => String(x.id) === id);
@@ -1529,10 +1521,10 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
       setModel(a.model || "gpt-4o-mini");
       setKnowledge("");
       setMsgs([{ role: "agent", text: "[" + a.name + "] loaded. Test it in the chat." }]);
-      setKbStatus("saving"); // reuse "saving" spinner to indicate loading KB
+      setKbLoading(true);
       const kb = await loadKbFromBackend(String(a.id));
       setKnowledge(kb);
-      setKbStatus("saved");
+      setKbLoading(false);
     }
   };
 
@@ -1589,7 +1581,6 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 
   const TABS = ["// prompt", "// knowledge", "// tools", "// deploy"];
 
-  const kbStatusLabel = kbStatus === "saved" ? "// saved to cloud" : kbStatus === "saving" ? "// syncing..." : "// unsaved changes";
 
   return (
     <div className="studio-split">
@@ -1668,29 +1659,46 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
           {/* KNOWLEDGE TAB */}
           {tab === 1 && (
             <div style={{ paddingTop: 20 }} className="page-enter">
-              <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.8 }}>
-                // type or paste your knowledge base below. changes are saved automatically.
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.8 }}>
+                // type or paste your knowledge base below. click save to upload it to your agent's vector store.
               </div>
 
-              <div className={`kb-save-status ${kbStatus}`}>
-                <span className="kb-dot" />
-                {kbStatusLabel}
-              </div>
+              {kbLoading && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 10, color: "var(--text-muted)", fontFamily: "var(--font-mono)", marginBottom: 10 }}>
+                  <span className="btn-spinner" style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: "rgba(255,85,0,0.2)", borderTopColor: "var(--orange-400)", flexShrink: 0 }} />
+                  // loading knowledge base...
+                </div>
+              )}
 
               <div className="field">
                 <label>// knowledge base</label>
                 <textarea
                   className="input"
                   value={knowledge}
-                  onChange={e => handleKnowledgeChange(e.target.value)}
+                  onChange={e => setKnowledge(e.target.value)}
                   placeholder={"Q: What is your return policy?\nA: We offer 30-day returns.\n\nQ: How do I contact support?\nA: Email support@example.com"}
-                  style={{ minHeight: 280, lineHeight: 1.7 }}
+                  style={{ minHeight: 300, lineHeight: 1.7 }}
+                  disabled={!agent || kbLoading}
                 />
               </div>
-              <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                {knowledge.trim()
-                  ? `// ${knowledge.split("\n").filter(l => l.trim()).length} lines indexed — used live in chat preview`
-                  : "// no content yet — chat will use system prompt only"}
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                  {knowledge.trim()
+                    ? `// ${knowledge.split("\n").filter(l => l.trim()).length} lines · saved as knowledge_base.txt`
+                    : "// no content yet — chat will use system prompt only"}
+                </div>
+                <button
+                  className="btn btn-primary"
+                  style={{ width: "auto" }}
+                  onClick={saveKb}
+                  disabled={kbSaving || kbLoading || !agent || !knowledge.trim()}
+                >
+                  <span className="btn-inner">
+                    {kbSaving && <BtnSpinner />}
+                    {kbSaving ? "Saving..." : "> save knowledge base"}
+                  </span>
+                </button>
               </div>
             </div>
           )}
