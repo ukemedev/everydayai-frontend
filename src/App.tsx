@@ -509,6 +509,19 @@ const CSS = `
   .social-help a { color: var(--orange-400); cursor: pointer; text-decoration: none; }
   .social-help a:hover { color: var(--orange-300); text-decoration: underline; }
   .social-mock-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-muted); background: var(--surface-2); border: var(--border); padding: 2px 8px; border-radius: 2px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; font-family: var(--font-mono); }
+  .wa-connect-form { display: flex; flex-direction: column; gap: 14px; }
+  .wa-connect-title { font-family: var(--font-sans); font-size: 15px; font-weight: 700; color: var(--white); }
+  .wa-connect-desc { font-size: 11px; color: var(--text-muted); line-height: 1.7; }
+  .wa-connected-card { background: rgba(37,211,102,0.05); border: 1px solid rgba(37,211,102,0.22); border-radius: var(--radius-md); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .wa-status-row { display: flex; align-items: center; gap: 8px; }
+  .wa-dot { width: 9px; height: 9px; border-radius: 50%; background: #25d366; flex-shrink: 0; box-shadow: 0 0 6px rgba(37,211,102,0.6); }
+  .wa-status-label { font-size: 13px; font-weight: 700; color: #25d366; font-family: var(--font-sans); }
+  .wa-info-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; border-top: 1px solid rgba(37,211,102,0.1); padding-top: 10px; }
+  .wa-info-key { color: var(--text-muted); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; }
+  .wa-info-val { color: var(--text-primary); font-weight: 500; text-align: right; word-break: break-all; }
+  .wa-webhook-hint { background: var(--surface-1); border: var(--border); border-radius: var(--radius); padding: 12px 14px; margin-top: 4px; }
+  .wa-webhook-hint-title { font-size: 9px; color: var(--orange-400); font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .wa-webhook-hint-url { font-size: 10px; font-family: var(--font-mono); color: var(--text-secondary); word-break: break-all; line-height: 1.6; }
 
   .custom-code-panel { }
   .snippet-label { font-size: 9px; color: var(--orange-400); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
@@ -1814,6 +1827,153 @@ function StudioPage({ toast, setPage }: { toast: (m: string) => void; setPage: (
 type DeployDest = "socials" | "custom" | "website";
 type SocialPlatform = "whatsapp" | "instagram" | "messenger";
 
+const BASE = "https://everydayai-backend-production.up.railway.app";
+
+interface WaStatus { connected: boolean; phone_number: string | null; phone_number_id: string | null; }
+
+function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: string) => void }) {
+  const [status, setStatus] = useState<WaStatus | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [waToken, setWaToken] = useState("");
+  const [phoneNumId, setPhoneNumId] = useState("");
+  const [phoneNum, setPhoneNum] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [connectErr, setConnectErr] = useState("");
+
+  useEffect(() => {
+    if (!agent) { setStatus(null); return; }
+    setLoadingStatus(true);
+    const authTok = localStorage.getItem("token");
+    fetch(`${BASE}/agents/${agent.id}/whatsapp/status`, {
+      headers: { Authorization: `Bearer ${authTok}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setStatus(d ?? { connected: false, phone_number: null, phone_number_id: null }))
+      .catch(() => setStatus({ connected: false, phone_number: null, phone_number_id: null }))
+      .finally(() => setLoadingStatus(false));
+  }, [agent?.id]);
+
+  async function connect() {
+    if (!agent || !waToken.trim() || !phoneNumId.trim() || !phoneNum.trim()) return;
+    setConnecting(true); setConnectErr("");
+    try {
+      const authTok = localStorage.getItem("token");
+      const res = await fetch(`${BASE}/agents/${agent.id}/whatsapp/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authTok}` },
+        body: JSON.stringify({ phone_number_id: phoneNumId.trim(), phone_number: phoneNum.trim(), whatsapp_token: waToken.trim() }),
+      });
+      if (!res.ok) {
+        let err = "Failed to connect WhatsApp.";
+        try {
+          const d = await res.json();
+          const raw = d?.detail ?? d?.message ?? null;
+          if (typeof raw === "string") err = raw;
+          else if (Array.isArray(raw)) err = raw.map((e: any) => e?.msg || String(e)).join(", ");
+        } catch { /* ignore */ }
+        setConnectErr(err);
+      } else {
+        setStatus({ connected: true, phone_number: phoneNum.trim(), phone_number_id: phoneNumId.trim() });
+        setWaToken(""); setPhoneNumId(""); setPhoneNum("");
+        toast("WhatsApp connected successfully!");
+      }
+    } catch { setConnectErr("Connection failed. Check your internet."); }
+    finally { setConnecting(false); }
+  }
+
+  async function disconnect() {
+    if (!agent) return;
+    setDisconnecting(true);
+    try {
+      const authTok = localStorage.getItem("token");
+      const res = await fetch(`${BASE}/agents/${agent.id}/whatsapp/disconnect`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${authTok}` },
+      });
+      if (res.ok) {
+        setStatus({ connected: false, phone_number: null, phone_number_id: null });
+        toast("WhatsApp disconnected.");
+      } else { toast("Failed to disconnect. Try again."); }
+    } catch { toast("Failed to disconnect. Check your connection."); }
+    finally { setDisconnecting(false); }
+  }
+
+  if (!agent) return (
+    <div style={{ textAlign: "center", padding: "32px 16px" }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--white)", marginBottom: 6 }}>Select an agent first</div>
+      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Choose an agent from the selector above to connect WhatsApp.</div>
+    </div>
+  );
+
+  if (loadingStatus) return <div className="term-line">// loading WhatsApp status...</div>;
+
+  if (status?.connected) return (
+    <div className="wa-connected-card page-enter">
+      <div className="wa-status-row">
+        <span className="wa-dot" />
+        <span className="wa-status-label">WhatsApp Deployment Active</span>
+      </div>
+      <div className="wa-info-row">
+        <span className="wa-info-key">Phone Number</span>
+        <span className="wa-info-val">{status.phone_number}</span>
+      </div>
+      <div className="wa-info-row">
+        <span className="wa-info-key">Agent</span>
+        <span className="wa-info-val">{agent.name}</span>
+      </div>
+      <div className="wa-info-row">
+        <span className="wa-info-key">Phone Number ID</span>
+        <span className="wa-info-val" style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{status.phone_number_id}</span>
+      </div>
+      <button type="button" className="btn btn-danger btn-sm" style={{ marginTop: 4, width: "auto" }} onClick={disconnect} disabled={disconnecting}>
+        <span className="btn-inner">{disconnecting && <BtnSpinner />}{disconnecting ? "Disconnecting..." : "Disconnect"}</span>
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="wa-connect-form page-enter">
+      <div className="wa-connect-title">Connect WhatsApp Business</div>
+      <div className="wa-connect-desc">
+        You will need a Meta WhatsApp Business API token and Phone Number ID.{" "}
+        <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--orange-400)" }}>
+          Get these from the Meta Developer Dashboard →
+        </a>
+      </div>
+      {connectErr && (
+        <div className="alert-box" style={{ borderColor: "#ff4444", color: "#ff4444", background: "rgba(255,68,68,0.06)" }}>
+          ✗ {connectErr}
+        </div>
+      )}
+      <div className="field">
+        <label>WhatsApp Token</label>
+        <input className="input" type="password" placeholder="Permanent access token from Meta dashboard"
+          value={waToken} onChange={e => { setWaToken(e.target.value); setConnectErr(""); }} disabled={connecting} />
+      </div>
+      <div className="field">
+        <label>Phone Number ID</label>
+        <input className="input" type="text" placeholder="e.g. 1234567890123456"
+          value={phoneNumId} onChange={e => { setPhoneNumId(e.target.value); setConnectErr(""); }} disabled={connecting} />
+      </div>
+      <div className="field">
+        <label>Phone Number</label>
+        <input className="input" type="text" placeholder="e.g. +234 801 234 5678"
+          value={phoneNum} onChange={e => { setPhoneNum(e.target.value); setConnectErr(""); }} disabled={connecting} />
+      </div>
+      <button type="button" className="btn btn-primary" style={{ width: "auto" }}
+        onClick={connect} disabled={connecting || !waToken.trim() || !phoneNumId.trim() || !phoneNum.trim()}>
+        <span className="btn-inner">{connecting && <BtnSpinner />}{connecting ? "Connecting..." : "Connect WhatsApp"}</span>
+      </button>
+      <div className="wa-webhook-hint">
+        <div className="wa-webhook-hint-title">// Webhook URL — paste this in your Meta App Dashboard</div>
+        <div className="wa-webhook-hint-url">{BASE}/webhook/whatsapp</div>
+      </div>
+    </div>
+  );
+}
+
 function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void; refreshKey: number; setPage: (p: Page) => void }) {
   const { run } = useSpinner();
   const { agents, loading, error } = useAgents(refreshKey);
@@ -1995,7 +2155,6 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
           {/* ── SOCIALS PANEL ── */}
           {dest === "socials" && (
             <div className="page-enter">
-              <div className="social-mock-badge">// mock — coming soon</div>
               <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 16, letterSpacing: "0.06em", textTransform: "uppercase" }}>Select Social Deployment</div>
               <div className="social-grid">
                 {SOCIALS.map(s => (
@@ -2006,19 +2165,25 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
                   >
                     <span className="social-icon">{s.icon}</span>
                     {s.label}
+                    {s.id === "whatsapp" && (
+                      <span style={{ fontSize: 8, background: "rgba(37,211,102,0.15)", color: "#25d366", border: "1px solid rgba(37,211,102,0.3)", borderRadius: 3, padding: "1px 5px", marginTop: 3, fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>LIVE</span>
+                    )}
                   </div>
                 ))}
               </div>
-              <div className="social-help">
-                // Need help? <a onClick={() => toast("Tutorial coming soon!")}>Watch our {activeSocial.label} Deployment tutorial</a>
-              </div>
-              <button
-                className="btn btn-primary"
-                style={{ width: "auto", paddingLeft: 24, paddingRight: 24 }}
-                onClick={() => toast(`${activeSocial.label} integration coming soon!`)}
-              >
-                {activeSocial.btnLabel}
-              </button>
+
+              {social === "whatsapp" && (
+                <WhatsAppPanel agent={selectedAgent} toast={toast} />
+              )}
+
+              {social !== "whatsapp" && (
+                <div className="page-enter">
+                  <div className="social-help">
+                    {activeSocial.helpText}
+                  </div>
+                  <div className="social-mock-badge">// coming soon</div>
+                </div>
+              )}
             </div>
           )}
 
