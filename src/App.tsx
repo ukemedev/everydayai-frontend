@@ -2176,19 +2176,12 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
           {dest === "socials" && (
             <div className="page-enter">
               <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 16, letterSpacing: "0.06em", textTransform: "uppercase" }}>Select Social Deployment</div>
-              <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--orange-400)", marginBottom: 8, opacity: 0.7 }}>
-                // active: {social}
-              </div>
-
               <div className="social-grid">
                 {SOCIALS.map(s => (
                   <div
                     key={s.id}
                     className={`social-btn${social === s.id ? " selected" : ""}`}
-                    onClick={() => {
-                      console.log("[EverydayAI] Social tab clicked:", s.id);
-                      setSocial(s.id);
-                    }}
+                    onClick={() => setSocial(s.id)}
                   >
                     <span className="social-icon">{s.icon}</span>
                     {s.label}
@@ -2217,7 +2210,14 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
           {/* ── CUSTOM CODE PANEL ── */}
           {dest === "custom" && (
             <div className="custom-code-panel page-enter">
-              {agents.length === 0 ? (
+              {error ? (
+                <div style={{ textAlign: "center", padding: "32px 16px" }}>
+                  <div style={{ fontSize: 28, marginBottom: 12 }}>⚠</div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--white)", marginBottom: 6 }}>Could not load agents</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.7 }}>{error}</div>
+                  <button className="btn btn-ghost btn-sm" style={{ width: "auto", margin: "0 auto" }} onClick={() => window.location.reload()}>↺ Retry</button>
+                </div>
+              ) : agents.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "32px 16px" }}>
                   <div style={{ fontSize: 28, marginBottom: 12 }}>{"</>"}</div>
                   <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--white)", marginBottom: 6 }}>No agent to deploy yet</div>
@@ -2614,6 +2614,25 @@ export default function App() {
     return token && email ? email : null;
   });
   const [userPlan, setUserPlan] = useState("free");
+
+  // Validate saved token on startup — runs while boot loader is hiding the UI,
+  // so no flash occurs if the token is expired/invalid.
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const email = localStorage.getItem("userEmail");
+    if (!token || !email) return;
+    fetch("https://everydayai-backend-production.up.railway.app/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => {
+        if (!r.ok) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userEmail");
+          setUser(null);
+        }
+      })
+      .catch(() => { /* network error — keep user logged in, they'll get an error on the next real request */ });
+  }, []);
   const [upgradeModal, setUpgradeModal] = useState(false);
 
   // Detect Paystack redirect-back params on page load
