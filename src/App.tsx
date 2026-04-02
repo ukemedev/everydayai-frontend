@@ -1919,14 +1919,6 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
     finally { setDisconnecting(false); }
   }
 
-  if (!agent) return (
-    <div style={{ textAlign: "center", padding: "32px 16px" }}>
-      <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--white)", marginBottom: 6 }}>Select an agent first</div>
-      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Choose an agent from the selector above to connect WhatsApp.</div>
-    </div>
-  );
-
   if (isConnected && connectedInfo) return (
     <div className="wa-connected-card page-enter">
       <div className="wa-status-row">
@@ -1960,6 +1952,13 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
           Get these from the Meta Developer Dashboard →
         </a>
       </div>
+
+      {!agent && (
+        <div className="alert-box" style={{ borderColor: "var(--orange-500)", color: "var(--orange-400)", background: "var(--orange-glow)" }}>
+          ⚠ No agent selected — create an agent first, then come back to connect WhatsApp.
+        </div>
+      )}
+
       {checkingStatus && (
         <div style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>// checking existing connection...</div>
       )}
@@ -1971,20 +1970,20 @@ function WhatsAppPanel({ agent, toast }: { agent: Agent | null; toast: (m: strin
       <div className="field">
         <label>WhatsApp Token</label>
         <input className="input" type="password" placeholder="Permanent access token from Meta dashboard"
-          value={waToken} onChange={e => { setWaToken(e.target.value); setConnectErr(""); }} disabled={connecting} />
+          value={waToken} onChange={e => { setWaToken(e.target.value); setConnectErr(""); }} disabled={connecting || !agent} />
       </div>
       <div className="field">
         <label>Phone Number ID</label>
         <input className="input" type="text" placeholder="e.g. 1234567890123456"
-          value={phoneNumId} onChange={e => { setPhoneNumId(e.target.value); setConnectErr(""); }} disabled={connecting} />
+          value={phoneNumId} onChange={e => { setPhoneNumId(e.target.value); setConnectErr(""); }} disabled={connecting || !agent} />
       </div>
       <div className="field">
         <label>Phone Number</label>
         <input className="input" type="text" placeholder="e.g. +234 801 234 5678"
-          value={phoneNum} onChange={e => { setPhoneNum(e.target.value); setConnectErr(""); }} disabled={connecting} />
+          value={phoneNum} onChange={e => { setPhoneNum(e.target.value); setConnectErr(""); }} disabled={connecting || !agent} />
       </div>
       <button type="button" className="btn btn-primary" style={{ width: "auto" }}
-        onClick={connect} disabled={connecting || !waToken.trim() || !phoneNumId.trim() || !phoneNum.trim()}>
+        onClick={connect} disabled={!agent || connecting || !waToken.trim() || !phoneNumId.trim() || !phoneNum.trim()}>
         <span className="btn-inner">{connecting && <BtnSpinner />}{connecting ? "Connecting..." : "Connect WhatsApp"}</span>
       </button>
       <div className="wa-webhook-hint">
@@ -2177,12 +2176,19 @@ function DeployPage({ toast, refreshKey, setPage }: { toast: (m: string) => void
           {dest === "socials" && (
             <div className="page-enter">
               <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 16, letterSpacing: "0.06em", textTransform: "uppercase" }}>Select Social Deployment</div>
+              <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--orange-400)", marginBottom: 8, opacity: 0.7 }}>
+                // active: {social}
+              </div>
+
               <div className="social-grid">
                 {SOCIALS.map(s => (
                   <div
                     key={s.id}
                     className={`social-btn${social === s.id ? " selected" : ""}`}
-                    onClick={() => setSocial(s.id)}
+                    onClick={() => {
+                      console.log("[EverydayAI] Social tab clicked:", s.id);
+                      setSocial(s.id);
+                    }}
                   >
                     <span className="social-icon">{s.icon}</span>
                     {s.label}
